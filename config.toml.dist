@@ -1,0 +1,11 @@
+[server]
+port = 8080
+
+[db]
+url = "postgres://pharmarecall:pharmarecall@localhost:5432/pharmarecall?sslmode=disable"
+
+[session]
+secret = "dev-secret-change-in-production"
+
+[lookahead]
+days = 7
