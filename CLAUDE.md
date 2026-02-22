@@ -28,10 +28,13 @@ Web application for Italian pharmacies to manage patients with recurring prescri
 ## Project Commands
 
 - `just openspec <args>` — run OpenSpec commands (never `openspec` directly)
-- `just test` — run all tests (with data race detection)
+- `just test` — run all tests (`just test ./internal/web/...` to target a package)
+- `just test_races` — run all tests with data race detection (use after completing a feature)
 - `just fmt` — format all Go code
 - `just vet` — run go vet
 - `just generate` — run `templ generate` and `sqlc generate` (also runs automatically before build)
+- `just migrate <command>` — run goose migrations (`up`, `down`, `status`, `validate`, etc.)
+- `just migrate_create <name>` — create a new sequential SQL migration
 - Docker Compose for PostgreSQL
 
 ## Development Workflow
@@ -44,6 +47,8 @@ Web application for Italian pharmacies to manage patients with recurring prescri
 4. Repeat
 
 Edge cases come LATER — first get the happy path working. Do NOT write multiple failing tests at once. Do NOT write code before the test exists.
+
+**At the end of every feature/section**, run the full quality gate: `just check` (which runs `fmt`, `vet`, `fix`, `test`) and then `just test_races` for data race detection. Fix any issues before moving on.
 
 All code MUST be formatted (`just fmt`) and pass `just vet` before committing.
 
