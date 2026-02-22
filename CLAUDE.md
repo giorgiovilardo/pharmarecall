@@ -76,6 +76,7 @@ Artifacts location: `openspec/changes/pharmarecall-mvp/`
 ## Restrictions
 
 - **Never run git commands.** I manage the repository myself. No commits, no pushes, no branch operations, no staging.
+- **Never read generated files.** Do not read `*_templ.go` (templ) or `internal/db/*.go` (sqlc). These are machine output — edit the `.templ` or `.sql` source files instead.
 - **Frontend code MUST use `/oatsmith`**: when writing or reviewing any HTML/CSS/Templ templates, always invoke the `/oatsmith` skill. Never write frontend markup without it.
 
 ## Conventions
