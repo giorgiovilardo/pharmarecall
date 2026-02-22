@@ -29,6 +29,24 @@ The system SHALL display a list of all pharmacies to the admin, showing name, ad
 - **WHEN** an admin navigates to the pharmacy list
 - **THEN** the system displays all pharmacies with their details
 
+### Requirement: Pharmacy editing by admin
+The system SHALL allow admins to edit pharmacy details (name, address, phone, email) from the admin dashboard.
+
+#### Scenario: Admin edits a pharmacy
+- **WHEN** an admin submits updated pharmacy details
+- **THEN** the system updates the pharmacy record
+
+### Requirement: Admin manages pharmacy personnel
+The system SHALL allow admins to view and add personnel to any pharmacy. The admin SHALL be able to create new personnel accounts with name, email, and temporary password scoped to a specific pharmacy.
+
+#### Scenario: Admin views pharmacy personnel
+- **WHEN** an admin views a pharmacy's detail page
+- **THEN** the system displays all personnel belonging to that pharmacy
+
+#### Scenario: Admin adds personnel to a pharmacy
+- **WHEN** an admin submits a new personnel form for a specific pharmacy
+- **THEN** the system creates the personnel account scoped to that pharmacy
+
 ### Requirement: Admin route protection
 Admin routes SHALL only be accessible to users with the admin role. Pharmacy personnel attempting to access admin routes SHALL be denied.
 

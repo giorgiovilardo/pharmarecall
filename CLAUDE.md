@@ -11,10 +11,12 @@ Web application for Italian pharmacies to manage patients with recurring prescri
 - **Templates**: [Templ](https://templ.guide) — type-safe Go HTML templates
 - **CSS**: [oat.ink](https://oat.ink/) — semantic, zero-dependency CSS library (~8KB)
 - **HTTP**: Go stdlib `net/http` with ServeMux (Go 1.22+)
-- **DB driver**: jackc/pgx
+- **DB driver**: jackc/pgx/v5 with pgxpool
+- **Queries**: sqlc — SQL in `db/queries/*.sql`, generated Go code in `internal/db/`
 - **Sessions**: alexedwards/scs with pgxstore
 - **Migrations**: pressly/goose with embed.FS
 - **Auth**: bcrypt password hashing, session-based with HTTP-only cookies
+- **Config**: koanf with TOML config file
 
 ## Architecture
 
@@ -29,6 +31,7 @@ Web application for Italian pharmacies to manage patients with recurring prescri
 - `just test` — run all tests (with data race detection)
 - `just fmt` — format all Go code
 - `just vet` — run go vet
+- `just generate` — run `templ generate` and `sqlc generate` (also runs automatically before build)
 - Docker Compose for PostgreSQL
 
 ## Development Workflow
@@ -68,10 +71,13 @@ Artifacts location: `openspec/changes/pharmarecall-mvp/`
 ## Restrictions
 
 - **Never run git commands.** I manage the repository myself. No commits, no pushes, no branch operations, no staging.
+- **Frontend code MUST use `/oatsmith`**: when writing or reviewing any HTML/CSS/Templ templates, always invoke the `/oatsmith` skill. Never write frontend markup without it.
 
 ## Conventions
 
 - Use `just` as the task runner
 - SQL migrations are plain `.sql` files under `db/migrations/`, sequential numbering
+- No PostgreSQL enums. Use basic data types (text/varchar) with CHECK constraints for constrained values (e.g., roles, statuses, fulfillment).
 - Pharmacy scoping: all patient/prescription/notification queries MUST filter by pharmacy_id
 - Order calculation is on-demand (no cron), based on consumption rate and box start date
+- All database writes MUST use a transaction

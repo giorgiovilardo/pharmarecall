@@ -29,6 +29,17 @@ The system SHALL allow the pharmacy owner to invite additional personnel by crea
 - **WHEN** a non-owner personnel attempts to access the personnel management page
 - **THEN** the system denies access and displays an authorization error
 
+### Requirement: Password change
+The system SHALL allow any authenticated user (admin, owner, or personnel) to change their own password by providing their current password and a new password.
+
+#### Scenario: Successful password change
+- **WHEN** a user submits their correct current password and a new password
+- **THEN** the system updates the password hash and redirects to the dashboard
+
+#### Scenario: Incorrect current password
+- **WHEN** a user submits an incorrect current password
+- **THEN** the system displays an error and does not change the password
+
 ### Requirement: Password hashing
 The system SHALL store passwords using bcrypt hashing. The system SHALL NOT store plaintext passwords.
 

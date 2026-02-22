@@ -13,10 +13,13 @@ fix:
 test *args:
   go test -race ./... {{args}}
 
-build:
+generate:
+  templ generate && sqlc generate
+
+build: generate
   go build -o bin/pharmarecall ./cmd/server
 
-build-prod:
+build-prod: generate
   CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/pharmarecall ./cmd/server
 
 check: fmt vet fix test

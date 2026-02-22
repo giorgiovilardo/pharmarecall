@@ -37,11 +37,15 @@ The system SHALL allow personnel to edit prescription details (medication name, 
 - **THEN** the system updates the prescription and recalculates the depletion date
 
 ### Requirement: Refill recording
-The system SHALL allow personnel to record a refill, which resets the box start date to the refill date. The previous box data SHALL be preserved for history.
+The system SHALL allow personnel to record a refill, which resets the box start date to the refill date, starting a new depletion cycle. The previous box data SHALL be preserved for history. If an active order exists for the previous cycle, it SHALL be marked as fulfilled automatically.
 
 #### Scenario: Record a refill
 - **WHEN** personnel records a refill for a prescription
 - **THEN** the system updates the box start date to the refill date and stores the previous box period in history
+
+#### Scenario: Refill auto-fulfills active order
+- **WHEN** personnel records a refill and a pending or prepared order exists for the previous cycle
+- **THEN** the system marks that order as fulfilled
 
 ### Requirement: Prescription status classification
 The system SHALL classify each prescription into one of three statuses based on estimated remaining days: "ok" (more than 7 days remaining), "approaching" (7 days or fewer remaining), "depleted" (0 or fewer days remaining).
