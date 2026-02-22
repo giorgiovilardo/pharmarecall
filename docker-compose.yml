@@ -1,0 +1,29 @@
+services:
+  pharmarecall-app:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.toml:/config.toml:ro
+    depends_on:
+      pharmarecall-db:
+        condition: service_healthy
+
+  pharmarecall-db:
+    image: postgres:18
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: pharmarecall
+      POSTGRES_PASSWORD: pharmarecall
+      POSTGRES_DB: pharmarecall
+    volumes:
+      - pharmarecall-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pharmarecall"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pharmarecall-pgdata:
