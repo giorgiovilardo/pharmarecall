@@ -19,7 +19,7 @@
 - [x] 2.4 Write sqlc queries for users: GetUserByEmail, GetUserByID
 - [x] 2.5 Create login page Templ template: email/password form
 - [x] 2.6 Implement login handler: validate credentials, create SCS session with user ID and role, redirect based on role (admin → admin dashboard, personnel → order dashboard)
-- [ ] 2.7 Implement auth middleware: load user from SCS session, attach to request context, redirect to login if unauthenticated
+- [x] 2.7 Implement auth middleware: load user from SCS session, attach to request context, redirect to login if unauthenticated
 - [ ] 2.8 Implement logout handler: destroy SCS session, redirect to login
 - [ ] 2.9 Add seed command/migration to create admin user with configurable email/password
 - [ ] 2.10 Create change-password page: current password + new password form
