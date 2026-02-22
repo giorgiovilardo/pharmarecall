@@ -82,3 +82,8 @@ db/
   queries/         SQL query files (sqlc)
 static/            static assets (embedded)
 ```
+
+## TODO
+
+- Proper error pages
+- Proper i18n/strings
