@@ -48,6 +48,8 @@ Web application for Italian pharmacies to manage patients with recurring prescri
 
 Edge cases come LATER — first get the happy path working. Do NOT write multiple failing tests at once. Do NOT write code before the test exists.
 
+When writing a failing test, also create skeleton implementations (functions/methods that return zero values or `errors.New("not implemented")`) so the code compiles. The test must fail for the right **behavioral** reason, not because the function doesn't exist.
+
 **At the end of every feature/section**, run the full quality gate: `just check` (which runs `fmt`, `vet`, `fix`, `test`) and then `just test_races` for data race detection. Fix any issues before moving on.
 
 All code MUST be formatted (`just fmt`) and pass `just vet` before committing.
