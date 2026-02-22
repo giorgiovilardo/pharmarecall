@@ -1,15 +1,15 @@
 ## 1. Project Scaffolding
 
-- [ ] 1.1 Initialize Go module, set up `cmd/server/main.go` entrypoint with `net/http` server and graceful shutdown (`signal.NotifyContext` + `server.Shutdown`)
-- [ ] 1.2 Set up project directory structure (`internal/`, `db/migrations/`, `db/queries/`, `static/`)
-- [ ] 1.3 Add dependencies: pgx/v5 (pgxpool), sqlc, scs/v2, scs/pgxstore, goose/v3, templ, bcrypt, koanf/v2 (with TOML provider). Install Templ and sqlc CLIs as tool dependencies. Create `sqlc.yaml` config (engine: postgresql, queries: db/queries/, schema: db/migrations/, out: internal/db/, sql_package: pgx/v5).
-- [ ] 1.4 Set up Docker Compose with PostgreSQL 18
-- [ ] 1.5 Add oat.ink CSS to `static/` and configure `embed.FS` for static assets with an HTTP file server handler on `/static/`
-- [ ] 1.6 Create base Templ layout (html head with oat.ink, nav, content area) and a health check "/" page to verify the stack works
-- [ ] 1.7 Set up goose migrations with `embed.FS` and verify migrations run on startup
-- [ ] 1.8 Configure SCS session manager with pgxstore (with cleanup interval), wire into HTTP server middleware
-- [ ] 1.9 Wire `http.CrossOriginProtection` middleware into the HTTP server
-- [ ] 1.10 Set up koanf configuration loading from a TOML file (db connection, server port, session secret, lookahead window)
+- [x] 1.1 Initialize Go module, set up `cmd/server/main.go` entrypoint with `net/http` server and graceful shutdown (`signal.NotifyContext` + `server.Shutdown`)
+- [x] 1.2 Set up project directory structure (`internal/`, `db/migrations/`, `db/queries/`, `static/`)
+- [x] 1.3 Add dependencies: pgx/v5 (pgxpool), sqlc, scs/v2, scs/pgxstore, goose/v3, templ, bcrypt, koanf/v2 (with TOML provider). Install Templ and sqlc CLIs as tool dependencies. Create `sqlc.yaml` config (engine: postgresql, queries: db/queries/, schema: db/migrations/, out: internal/db/, sql_package: pgx/v5).
+- [x] 1.4 Set up Docker Compose with PostgreSQL 18
+- [x] 1.5 Add oat.ink CSS to `static/` and configure `embed.FS` for static assets with an HTTP file server handler on `/static/`
+- [x] 1.6 Create base Templ layout (html head with oat.ink, nav, content area) and a health check "/" page to verify the stack works
+- [x] 1.7 Set up goose migrations with `embed.FS` and verify migrations run on startup
+- [x] 1.8 Configure SCS session manager with pgxstore (with cleanup interval), wire into HTTP server middleware
+- [x] 1.9 Wire `http.CrossOriginProtection` middleware into the HTTP server
+- [x] 1.10 Set up koanf configuration loading from a TOML file (db connection, server port, session secret, lookahead window)
 
 ## 2. Login & Logout (Admin + Personnel)
 

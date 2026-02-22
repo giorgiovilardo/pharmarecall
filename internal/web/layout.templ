@@ -1,0 +1,23 @@
+package web
+
+templ Layout(title string) {
+	<!DOCTYPE html>
+	<html lang="it">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title } - PharmaRecall</title>
+			<link rel="stylesheet" href="https://unpkg.com/@knadh/oat/oat.min.css"/>
+			<link rel="stylesheet" href="/static/custom.css"/>
+		</head>
+		<body>
+			<nav data-topnav>
+				<strong>PharmaRecall</strong>
+			</nav>
+			<main style="padding: var(--space-4);">
+				{ children... }
+			</main>
+			<script src="https://unpkg.com/@knadh/oat/oat.min.js"></script>
+		</body>
+	</html>
+}
