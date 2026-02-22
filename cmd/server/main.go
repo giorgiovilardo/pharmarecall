@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -9,17 +11,65 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
+
+	"github.com/giorgiovilardo/pharmarecall/db/migrations"
+	"github.com/giorgiovilardo/pharmarecall/internal/auth"
+	"github.com/giorgiovilardo/pharmarecall/internal/config"
+	"github.com/giorgiovilardo/pharmarecall/internal/db"
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
+	if err := run(); err != nil {
+		slog.Error("fatal", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	handler := web.NewHandler()
+	cfg, err := config.Load("config.toml")
+	if err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+
+	// database/sql connection for goose migrations
+	sqlDB, err := sql.Open("pgx", cfg.DB.URL)
+	if err != nil {
+		return fmt.Errorf("opening sql db: %w", err)
+	}
+	defer sqlDB.Close()
+
+	if err := migrations.Run(sqlDB); err != nil {
+		return fmt.Errorf("running migrations: %w", err)
+	}
+
+	// pgxpool for application use
+	pool, err := pgxpool.New(ctx, cfg.DB.URL)
+	if err != nil {
+		return fmt.Errorf("creating connection pool: %w", err)
+	}
+	defer pool.Close()
+
+	queries := db.New(pool)
+	sm := auth.NewSessionManager(pool)
+
+	// Build handlers
+	mux := web.NewRouter(
+		web.HandleLoginPage(),
+		web.HandleLoginPost(sm, queries),
+	)
+
+	// Compose middleware
+	cop := http.NewCrossOriginProtection()
+	handler := cop.Handler(sm.LoadAndSave(mux))
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
 		Handler: handler,
 	}
 
@@ -38,8 +88,8 @@ func main() {
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		slog.Error("shutdown error", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("shutting down server: %w", err)
 	}
 	slog.Info("server stopped")
+	return nil
 }

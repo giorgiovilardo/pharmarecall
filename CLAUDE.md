@@ -24,6 +24,10 @@ Web application for Italian pharmacies to manage patients with recurring prescri
 - Single binary deployment — all assets (oat.ink CSS) and migrations embedded via `embed.FS`
 - Domain-driven project layout under `internal/`
 - Three roles: admin, pharmacy owner, pharmacy personnel
+- Closure-based handler DI: each handler is a `func(...deps) http.HandlerFunc` closing over its deps. No server struct. Interfaces live next to the handler that needs them.
+- `main.go` is the composition root: creates concrete deps (DB pool, session manager), constructs handlers, passes them to `NewRouter()`, composes middleware.
+- `NewRouter()` in `internal/web/routes.go` only does routing — it takes `http.HandlerFunc` values, knows nothing about interfaces or deps.
+- Handler tests: construct handlers directly with stubs, wrap in minimal middleware (e.g. `sm.LoadAndSave`), test via `httptest.NewServer`. Stubs and helpers live in test files.
 
 ## Project Commands
 
@@ -78,7 +82,7 @@ Artifacts location: `openspec/changes/pharmarecall-mvp/`
 ## Restrictions
 
 - **Never run git commands.** I manage the repository myself. No commits, no pushes, no branch operations, no staging.
-- **Never read generated files.** Do not read `*_templ.go` (templ) or `internal/db/*.go` (sqlc). These are machine output — edit the `.templ` or `.sql` source files instead.
+- **Never edit generated files.** Do not edit `*_templ.go` (templ) or `internal/db/*.go` (sqlc). Reading them is OK to check types; editing goes through the `.templ` or `.sql` source files.
 - **Frontend code MUST use `/oatsmith`**: when writing or reviewing any HTML/CSS/Templ templates, always invoke the `/oatsmith` skill. Never write frontend markup without it.
 
 ## Conventions

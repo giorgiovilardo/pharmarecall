@@ -5,12 +5,24 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
 )
 
+// newTestStack builds a full handler stack (router + sessions + CORS) for
+// integration-level route tests.
+func newTestStack() http.Handler {
+	sm := scs.New()
+	mux := web.NewRouter(
+		web.HandleLoginPage(),
+		web.HandleLoginPost(sm, &stubUserGetter{}),
+	)
+	cop := http.NewCrossOriginProtection()
+	return cop.Handler(sm.LoadAndSave(mux))
+}
+
 func TestCrossOriginPostRejected(t *testing.T) {
-	handler := web.NewHandler()
-	srv := httptest.NewServer(handler)
+	srv := httptest.NewServer(newTestStack())
 	defer srv.Close()
 
 	req, err := http.NewRequest(http.MethodPost, srv.URL+"/", nil)
@@ -31,8 +43,7 @@ func TestCrossOriginPostRejected(t *testing.T) {
 }
 
 func TestHealthCheck(t *testing.T) {
-	handler := web.NewHandler()
-	srv := httptest.NewServer(handler)
+	srv := httptest.NewServer(newTestStack())
 	defer srv.Close()
 
 	resp, err := http.Get(srv.URL + "/")
@@ -50,8 +61,7 @@ func TestHealthCheck(t *testing.T) {
 }
 
 func TestStaticFileServing(t *testing.T) {
-	handler := web.NewHandler()
-	srv := httptest.NewServer(handler)
+	srv := httptest.NewServer(newTestStack())
 	defer srv.Close()
 
 	resp, err := http.Get(srv.URL + "/static/custom.css")

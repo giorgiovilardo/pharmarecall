@@ -1,0 +1,23 @@
+package web
+
+templ LoginPage(errMsg string) {
+	@Layout("Login") {
+		<section style="max-width: 24rem; margin: var(--space-10) auto;">
+			<h1>Accedi</h1>
+			if errMsg != "" {
+				<div role="alert" data-variant="danger">{ errMsg }</div>
+			}
+			<form method="POST" action="/login">
+				<label data-field>
+					Email
+					<input type="email" name="email" required placeholder="nome@farmacia.it" autofocus/>
+				</label>
+				<label data-field>
+					Password
+					<input type="password" name="password" required placeholder="Password"/>
+				</label>
+				<button type="submit" class="w-100">Accedi</button>
+			</form>
+		</section>
+	}
+}
