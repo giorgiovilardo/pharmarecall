@@ -10,17 +10,28 @@ vet:
 fix:
   go fix ./...
 
-test *args:
-  go test -race ./... {{args}}
+test target="./...":
+  go test {{target}}
+
+test_races target="./...":
+  go test -race {{target}}
 
 generate:
-  templ generate && sqlc generate
+  go tool templ generate && go tool sqlc generate
 
 build: generate
   go build -o bin/pharmarecall ./cmd/server
 
 build-prod: generate
   CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o bin/pharmarecall ./cmd/server
+
+db_url := "postgres://pharmarecall:pharmarecall@localhost:5432/pharmarecall?sslmode=disable"
+
+migrate *args:
+  go tool goose -dir db/migrations -s postgres "{{db_url}}" {{args}}
+
+migrate_create name:
+  go tool goose -dir db/migrations -s postgres "{{db_url}}" create {{name}} sql
 
 check: fmt vet fix test
 
