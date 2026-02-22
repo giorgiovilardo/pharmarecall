@@ -15,7 +15,7 @@
 
 - [x] 2.1 Migration: create `users` table (id, email, password_hash, name, role, pharmacy_id nullable, created_at, updated_at). Indexes: unique on email, index on pharmacy_id.
 - [x] 2.2 Migration: create SCS sessions table (via pgxstore schema)
-- [ ] 2.3 Implement password hashing/verification with bcrypt
+- [x] 2.3 Implement password hashing/verification with bcrypt
 - [ ] 2.4 Write sqlc queries for users: GetUserByEmail, GetUserByID
 - [ ] 2.5 Create login page Templ template: email/password form
 - [ ] 2.6 Implement login handler: validate credentials, create SCS session with user ID and role, redirect based on role (admin → admin dashboard, personnel → order dashboard)
