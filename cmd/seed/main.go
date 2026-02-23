@@ -48,7 +48,7 @@ func run(configPath, email, password string) error {
 	defer pool.Close()
 
 	queries := db.New(pool)
-	userRepo := user.NewPgxRepository(queries)
+	userRepo := user.NewPgxRepository(pool, queries)
 	userSvc := user.NewService(userRepo, auth.HashPassword, auth.VerifyPassword)
 
 	u, err := userSvc.SeedAdmin(ctx, email, password)

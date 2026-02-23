@@ -191,7 +191,7 @@ func TestCreatePrescriptionSuccessRedirects(t *testing.T) {
 
 func TestCreatePrescriptionMissingNameShowsError(t *testing.T) {
 	getter := &stubPatientGetter{patient: patient.Patient{ID: 10, Consensus: true}}
-	creator := &stubRxCreator{}
+	creator := &stubRxCreator{err: prescription.ErrMedicationRequired}
 
 	sm := scs.New()
 	srv := rxTestServer(rxTestDeps{sm: sm, patientGetter: getter, rxCreator: creator})
@@ -208,9 +208,6 @@ func TestCreatePrescriptionMissingNameShowsError(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
-	}
-	if creator.called {
-		t.Error("Create should not have been called")
 	}
 
 	body, _ := io.ReadAll(resp.Body)
@@ -351,7 +348,7 @@ func TestUpdatePrescriptionSuccessRedirects(t *testing.T) {
 func TestUpdatePrescriptionMissingNameShowsError(t *testing.T) {
 	pGetter := &stubPatientGetter{patient: patient.Patient{ID: 10}}
 	rxGetter := &stubRxGetter{rx: prescription.Prescription{ID: 5, MedicationName: "Tachipirina"}}
-	rxUpdater := &stubRxUpdater{}
+	rxUpdater := &stubRxUpdater{err: prescription.ErrMedicationRequired}
 
 	sm := scs.New()
 	srv := rxTestServer(rxTestDeps{sm: sm, patientGetter: pGetter, rxGetter: rxGetter, rxUpdater: rxUpdater})
@@ -368,9 +365,6 @@ func TestUpdatePrescriptionMissingNameShowsError(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
-	}
-	if rxUpdater.called {
-		t.Error("Update should not have been called")
 	}
 
 	body, _ := io.ReadAll(resp.Body)

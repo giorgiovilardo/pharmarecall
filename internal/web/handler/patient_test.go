@@ -260,13 +260,10 @@ func TestCreatePatientSuccessRedirects(t *testing.T) {
 	if stub.params.FirstName != "Mario" {
 		t.Errorf("firstName = %q, want Mario", stub.params.FirstName)
 	}
-	if stub.params.Fulfillment != "pickup" {
-		t.Errorf("fulfillment = %q, want pickup", stub.params.Fulfillment)
-	}
 }
 
 func TestCreatePatientMissingNameShowsError(t *testing.T) {
-	stub := &stubPatientCreator{}
+	stub := &stubPatientCreator{err: patient.ErrNameRequired}
 
 	sm := scs.New()
 	srv := patientTestServer(sm, nil, stub)
@@ -283,9 +280,6 @@ func TestCreatePatientMissingNameShowsError(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
 	}
-	if stub.called {
-		t.Error("create should not have been called")
-	}
 
 	body, _ := io.ReadAll(resp.Body)
 	if !strings.Contains(string(body), "obbligatori") {
@@ -294,7 +288,7 @@ func TestCreatePatientMissingNameShowsError(t *testing.T) {
 }
 
 func TestCreatePatientMissingContactShowsError(t *testing.T) {
-	stub := &stubPatientCreator{}
+	stub := &stubPatientCreator{err: patient.ErrContactRequired}
 
 	sm := scs.New()
 	srv := patientTestServer(sm, nil, stub)
@@ -310,9 +304,6 @@ func TestCreatePatientMissingContactShowsError(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
 	}
-	if stub.called {
-		t.Error("create should not have been called")
-	}
 
 	body, _ := io.ReadAll(resp.Body)
 	if !strings.Contains(string(body), "contatto") {
@@ -321,7 +312,7 @@ func TestCreatePatientMissingContactShowsError(t *testing.T) {
 }
 
 func TestCreatePatientShippingWithoutAddressShowsError(t *testing.T) {
-	stub := &stubPatientCreator{}
+	stub := &stubPatientCreator{err: patient.ErrDeliveryAddrRequired}
 
 	sm := scs.New()
 	srv := patientTestServer(sm, nil, stub)
@@ -338,9 +329,6 @@ func TestCreatePatientShippingWithoutAddressShowsError(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
-	}
-	if stub.called {
-		t.Error("create should not have been called")
 	}
 
 	body, _ := io.ReadAll(resp.Body)
@@ -450,7 +438,7 @@ func TestUpdatePatientSuccessRedirects(t *testing.T) {
 
 func TestUpdatePatientMissingNameShowsError(t *testing.T) {
 	getter := &stubPatientGetter{patient: patient.Patient{ID: 10, FirstName: "Mario", LastName: "Rossi"}}
-	updater := &stubPatientUpdater{}
+	updater := &stubPatientUpdater{err: patient.ErrNameRequired}
 
 	sm := scs.New()
 	srv := patientTestServerFull(patientTestDeps{sm: sm, getter: getter, updater: updater})
@@ -467,9 +455,6 @@ func TestUpdatePatientMissingNameShowsError(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
 	}
-	if updater.called {
-		t.Error("update should not have been called")
-	}
 
 	body, _ := io.ReadAll(resp.Body)
 	if !strings.Contains(string(body), "obbligatori") {
@@ -479,7 +464,7 @@ func TestUpdatePatientMissingNameShowsError(t *testing.T) {
 
 func TestUpdatePatientMissingContactShowsError(t *testing.T) {
 	getter := &stubPatientGetter{patient: patient.Patient{ID: 10, FirstName: "Mario", LastName: "Rossi"}}
-	updater := &stubPatientUpdater{}
+	updater := &stubPatientUpdater{err: patient.ErrContactRequired}
 
 	sm := scs.New()
 	srv := patientTestServerFull(patientTestDeps{sm: sm, getter: getter, updater: updater})
@@ -495,9 +480,6 @@ func TestUpdatePatientMissingContactShowsError(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
 	}
-	if updater.called {
-		t.Error("update should not have been called")
-	}
 
 	body, _ := io.ReadAll(resp.Body)
 	if !strings.Contains(string(body), "contatto") {
@@ -507,7 +489,7 @@ func TestUpdatePatientMissingContactShowsError(t *testing.T) {
 
 func TestUpdatePatientShippingWithoutAddressShowsError(t *testing.T) {
 	getter := &stubPatientGetter{patient: patient.Patient{ID: 10, FirstName: "Mario", LastName: "Rossi"}}
-	updater := &stubPatientUpdater{}
+	updater := &stubPatientUpdater{err: patient.ErrDeliveryAddrRequired}
 
 	sm := scs.New()
 	srv := patientTestServerFull(patientTestDeps{sm: sm, getter: getter, updater: updater})
@@ -524,9 +506,6 @@ func TestUpdatePatientShippingWithoutAddressShowsError(t *testing.T) {
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
-	}
-	if updater.called {
-		t.Error("update should not have been called")
 	}
 
 	body, _ := io.ReadAll(resp.Body)

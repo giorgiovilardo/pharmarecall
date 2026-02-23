@@ -317,4 +317,3 @@ func TestGetSuccess(t *testing.T) {
 		t.Errorf("MedicationName = %q, want Tachipirina", got.MedicationName)
 	}
 }
-

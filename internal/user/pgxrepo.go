@@ -7,6 +7,7 @@ import (
 
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Ensure PgxRepository satisfies Repository at compile time.
@@ -14,12 +15,13 @@ var _ Repository = (*PgxRepository)(nil)
 
 // PgxRepository implements all user port interfaces using pgx/sqlc.
 type PgxRepository struct {
+	pool    *pgxpool.Pool
 	queries *db.Queries
 }
 
 // NewPgxRepository creates a new PgxRepository.
-func NewPgxRepository(queries *db.Queries) *PgxRepository {
-	return &PgxRepository{queries: queries}
+func NewPgxRepository(pool *pgxpool.Pool, queries *db.Queries) *PgxRepository {
+	return &PgxRepository{pool: pool, queries: queries}
 }
 
 func (r *PgxRepository) GetByEmail(ctx context.Context, email string) (User, string, error) {
@@ -57,17 +59,30 @@ func (r *PgxRepository) GetByID(ctx context.Context, id int64) (User, string, er
 }
 
 func (r *PgxRepository) UpdatePassword(ctx context.Context, id int64, hash string) error {
-	if err := r.queries.UpdateUserPassword(ctx, db.UpdateUserPasswordParams{
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	if err := r.queries.WithTx(tx).UpdateUserPassword(ctx, db.UpdateUserPasswordParams{
 		ID:           id,
 		PasswordHash: hash,
 	}); err != nil {
 		return fmt.Errorf("updating user password: %w", err)
 	}
-	return nil
+
+	return tx.Commit(ctx)
 }
 
 func (r *PgxRepository) Create(ctx context.Context, email, passwordHash, name, role string) (User, error) {
-	row, err := r.queries.CreateUser(ctx, db.CreateUserParams{
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return User{}, fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	row, err := r.queries.WithTx(tx).CreateUser(ctx, db.CreateUserParams{
 		Email:        email,
 		PasswordHash: passwordHash,
 		Name:         name,
@@ -76,6 +91,11 @@ func (r *PgxRepository) Create(ctx context.Context, email, passwordHash, name, r
 	if err != nil {
 		return User{}, fmt.Errorf("creating user: %w", err)
 	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return User{}, fmt.Errorf("committing transaction: %w", err)
+	}
+
 	return User{
 		ID:    row.ID,
 		Email: row.Email,

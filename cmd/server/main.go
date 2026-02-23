@@ -66,7 +66,7 @@ func run() error {
 	sm := auth.NewSessionManager(pool)
 
 	// Domain services
-	userRepo := user.NewPgxRepository(queries)
+	userRepo := user.NewPgxRepository(pool, queries)
 	userSvc := user.NewService(userRepo, auth.HashPassword, auth.VerifyPassword)
 
 	pharmacyRepo := pharmacy.NewPgxRepository(pool, queries)

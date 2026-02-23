@@ -61,7 +61,21 @@ func HandleNewPatientPage() http.HandlerFunc {
 	}
 }
 
-// HandleCreatePatient validates the form and creates a patient.
+// patientValidationMessage maps domain validation errors to user-facing messages.
+func patientValidationMessage(err error) string {
+	switch {
+	case errors.Is(err, patient.ErrNameRequired):
+		return "Nome e cognome sono obbligatori."
+	case errors.Is(err, patient.ErrContactRequired):
+		return "È necessario almeno un contatto (telefono o email)."
+	case errors.Is(err, patient.ErrDeliveryAddrRequired):
+		return "L'indirizzo di consegna è obbligatorio per la spedizione."
+	default:
+		return ""
+	}
+}
+
+// HandleCreatePatient parses the form and creates a patient.
 func HandleCreatePatient(creator PatientCreator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
@@ -69,43 +83,23 @@ func HandleCreatePatient(creator PatientCreator) http.HandlerFunc {
 			return
 		}
 
-		firstName := r.FormValue("first_name")
-		lastName := r.FormValue("last_name")
-		phone := r.FormValue("phone")
-		email := r.FormValue("email")
-		deliveryAddress := r.FormValue("delivery_address")
-		fulfillment := r.FormValue("fulfillment")
-		notes := r.FormValue("notes")
-
-		if firstName == "" || lastName == "" {
-			web.PatientNewPage("Nome e cognome sono obbligatori.").Render(r.Context(), w)
-			return
-		}
-		if phone == "" && email == "" {
-			web.PatientNewPage("È necessario almeno un contatto (telefono o email).").Render(r.Context(), w)
-			return
-		}
-		if fulfillment == "" {
-			fulfillment = patient.FulfillmentPickup
-		}
-		if fulfillment == patient.FulfillmentShipping && deliveryAddress == "" {
-			web.PatientNewPage("L'indirizzo di consegna è obbligatorio per la spedizione.").Render(r.Context(), w)
-			return
-		}
-
 		pharmacyID := web.PharmacyID(r.Context())
 
 		_, err := creator.Create(r.Context(), patient.CreateParams{
 			PharmacyID:      pharmacyID,
-			FirstName:       firstName,
-			LastName:        lastName,
-			Phone:           phone,
-			Email:           email,
-			DeliveryAddress: deliveryAddress,
-			Fulfillment:     fulfillment,
-			Notes:           notes,
+			FirstName:       r.FormValue("first_name"),
+			LastName:        r.FormValue("last_name"),
+			Phone:           r.FormValue("phone"),
+			Email:           r.FormValue("email"),
+			DeliveryAddress: r.FormValue("delivery_address"),
+			Fulfillment:     r.FormValue("fulfillment"),
+			Notes:           r.FormValue("notes"),
 		})
 		if err != nil {
+			if msg := patientValidationMessage(err); msg != "" {
+				web.PatientNewPage(msg).Render(r.Context(), w)
+				return
+			}
 			slog.Error("creating patient", "error", err)
 			http.Error(w, "Errore interno.", http.StatusInternalServerError)
 			return
@@ -146,7 +140,7 @@ func HandlePatientDetail(getter PatientGetter, rxLister PrescriptionLister) http
 	}
 }
 
-// HandleUpdatePatient validates the form and updates a patient.
+// HandleUpdatePatient parses the form and updates a patient.
 func HandleUpdatePatient(getter PatientGetter, updater PatientUpdater, rxLister PrescriptionLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -160,43 +154,26 @@ func HandleUpdatePatient(getter PatientGetter, updater PatientUpdater, rxLister 
 			return
 		}
 
-		firstName := r.FormValue("first_name")
-		lastName := r.FormValue("last_name")
-		phone := r.FormValue("phone")
-		email := r.FormValue("email")
-		deliveryAddress := r.FormValue("delivery_address")
-		fulfillment := r.FormValue("fulfillment")
-		notes := r.FormValue("notes")
-
 		renderError := func(errMsg string) {
 			p, _ := getter.Get(r.Context(), id)
 			rxs, _ := rxLister.ListByPatient(r.Context(), id)
 			web.PatientDetailPage(p, rxs, time.Now(), errMsg).Render(r.Context(), w)
 		}
 
-		if firstName == "" || lastName == "" {
-			renderError("Nome e cognome sono obbligatori.")
-			return
-		}
-		if phone == "" && email == "" {
-			renderError("È necessario almeno un contatto (telefono o email).")
-			return
-		}
-		if fulfillment == patient.FulfillmentShipping && deliveryAddress == "" {
-			renderError("L'indirizzo di consegna è obbligatorio per la spedizione.")
-			return
-		}
-
 		if err := updater.Update(r.Context(), patient.UpdateParams{
 			ID:              id,
-			FirstName:       firstName,
-			LastName:        lastName,
-			Phone:           phone,
-			Email:           email,
-			DeliveryAddress: deliveryAddress,
-			Fulfillment:     fulfillment,
-			Notes:           notes,
+			FirstName:       r.FormValue("first_name"),
+			LastName:        r.FormValue("last_name"),
+			Phone:           r.FormValue("phone"),
+			Email:           r.FormValue("email"),
+			DeliveryAddress: r.FormValue("delivery_address"),
+			Fulfillment:     r.FormValue("fulfillment"),
+			Notes:           r.FormValue("notes"),
 		}); err != nil {
+			if msg := patientValidationMessage(err); msg != "" {
+				renderError(msg)
+				return
+			}
 			slog.Error("updating patient", "error", err)
 			http.Error(w, "Errore interno.", http.StatusInternalServerError)
 			return

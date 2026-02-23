@@ -2,8 +2,9 @@ package prescription
 
 import (
 	"errors"
-	"math"
 	"time"
+
+	"github.com/giorgiovilardo/pharmarecall/internal/depletion"
 )
 
 var (
@@ -16,11 +17,11 @@ var (
 	ErrConsumptionExceedsBox = errors.New("il consumo giornaliero deve essere inferiore alle unità per confezione (la confezione deve durare almeno un giorno)")
 )
 
-// Status constants for prescription depletion classification.
+// Status constants — re-exported from depletion for backward compatibility.
 const (
-	StatusOk          = "ok"
-	StatusApproaching = "approaching"
-	StatusDepleted    = "depleted"
+	StatusOk          = depletion.StatusOk
+	StatusApproaching = depletion.StatusApproaching
+	StatusDepleted    = depletion.StatusDepleted
 )
 
 // Prescription is the domain representation of a recurring prescription.
@@ -34,34 +35,18 @@ type Prescription struct {
 }
 
 // EstimatedDepletionDate returns the date when the current box is expected to run out.
-// Formula: box_start_date + floor(units_per_box / daily_consumption) days.
 func (p Prescription) EstimatedDepletionDate() time.Time {
-	days := math.Floor(float64(p.UnitsPerBox) / p.DailyConsumption)
-	return p.BoxStartDate.AddDate(0, 0, int(days))
+	return depletion.EstimatedDate(p.UnitsPerBox, p.DailyConsumption, p.BoxStartDate)
 }
 
 // DaysRemaining returns the number of days until depletion relative to the given date.
-// Negative values mean the prescription is past depletion.
 func (p Prescription) DaysRemaining(now time.Time) int {
-	depletion := p.EstimatedDepletionDate()
-	// Truncate both to date-only to avoid time-of-day affecting the calculation.
-	now = now.Truncate(24 * time.Hour)
-	depletion = depletion.Truncate(24 * time.Hour)
-	return int(depletion.Sub(now).Hours() / 24)
+	return depletion.DaysRemaining(p.EstimatedDepletionDate(), now)
 }
 
-// Status classifies the prescription based on days remaining:
-// "ok" (>7 days), "approaching" (<=7 days), "depleted" (<=0 days).
+// Status classifies the prescription based on days remaining.
 func (p Prescription) Status(now time.Time) string {
-	days := p.DaysRemaining(now)
-	switch {
-	case days <= 0:
-		return StatusDepleted
-	case days <= 7:
-		return StatusApproaching
-	default:
-		return StatusOk
-	}
+	return depletion.Status(p.DaysRemaining(now))
 }
 
 // CreateParams holds the data needed to create a prescription.

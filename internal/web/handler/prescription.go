@@ -39,6 +39,35 @@ type PrescriptionRefiller interface {
 	RecordRefill(ctx context.Context, prescriptionID int64, newStartDate time.Time) error
 }
 
+// prescriptionValidationMessage maps domain validation errors to user-facing messages.
+func prescriptionValidationMessage(err error) string {
+	switch {
+	case errors.Is(err, prescription.ErrMedicationRequired):
+		return "Il nome del farmaco è obbligatorio."
+	case errors.Is(err, prescription.ErrInvalidUnitsPerBox):
+		return "Le unità per confezione devono essere maggiori di zero."
+	case errors.Is(err, prescription.ErrInvalidConsumption):
+		return "Il consumo giornaliero deve essere maggiore di zero."
+	case errors.Is(err, prescription.ErrStartDateRequired):
+		return "La data di inizio confezione è obbligatoria."
+	case errors.Is(err, prescription.ErrConsumptionExceedsBox):
+		return "Il consumo giornaliero deve essere inferiore alle unità per confezione."
+	case errors.Is(err, prescription.ErrNoConsensus):
+		return "Il paziente deve dare il consenso prima di aggiungere prescrizioni."
+	default:
+		return ""
+	}
+}
+
+// parsePrescriptionForm extracts prescription fields from the request form.
+func parsePrescriptionForm(r *http.Request) (string, int, float64, time.Time) {
+	medicationName := r.FormValue("medication_name")
+	unitsPerBox, _ := strconv.Atoi(r.FormValue("units_per_box"))
+	dailyConsumption, _ := strconv.ParseFloat(r.FormValue("daily_consumption"), 64)
+	boxStartDate, _ := time.Parse("2006-01-02", r.FormValue("box_start_date"))
+	return medicationName, unitsPerBox, dailyConsumption, boxStartDate
+}
+
 // HandleNewPrescriptionPage renders the prescription creation form.
 func HandleNewPrescriptionPage(patientGetter PatientGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +97,7 @@ func HandleNewPrescriptionPage(patientGetter PatientGetter) http.HandlerFunc {
 	}
 }
 
-// HandleCreatePrescription validates the form and creates a prescription.
+// HandleCreatePrescription parses the form and creates a prescription.
 func HandleCreatePrescription(creator PrescriptionCreator, patientGetter PatientGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		patientID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -93,35 +122,7 @@ func HandleCreatePrescription(creator PrescriptionCreator, patientGetter Patient
 			return
 		}
 
-		medicationName := r.FormValue("medication_name")
-		unitsPerBox, _ := strconv.Atoi(r.FormValue("units_per_box"))
-		dailyConsumption, _ := strconv.ParseFloat(r.FormValue("daily_consumption"), 64)
-		boxStartDate, _ := time.Parse("2006-01-02", r.FormValue("box_start_date"))
-
-		renderError := func(errMsg string) {
-			web.PrescriptionNewPage(p, errMsg).Render(r.Context(), w)
-		}
-
-		if medicationName == "" {
-			renderError("Il nome del farmaco è obbligatorio.")
-			return
-		}
-		if unitsPerBox <= 0 {
-			renderError("Le unità per confezione devono essere maggiori di zero.")
-			return
-		}
-		if dailyConsumption <= 0 {
-			renderError("Il consumo giornaliero deve essere maggiore di zero.")
-			return
-		}
-		if boxStartDate.IsZero() {
-			renderError("La data di inizio confezione è obbligatoria.")
-			return
-		}
-		if dailyConsumption >= float64(unitsPerBox) {
-			renderError("Il consumo giornaliero deve essere inferiore alle unità per confezione.")
-			return
-		}
+		medicationName, unitsPerBox, dailyConsumption, boxStartDate := parsePrescriptionForm(r)
 
 		_, err = creator.Create(r.Context(), prescription.CreateParams{
 			PatientID:        patientID,
@@ -131,8 +132,8 @@ func HandleCreatePrescription(creator PrescriptionCreator, patientGetter Patient
 			BoxStartDate:     boxStartDate,
 		})
 		if err != nil {
-			if errors.Is(err, prescription.ErrNoConsensus) {
-				renderError("Il paziente deve dare il consenso prima di aggiungere prescrizioni.")
+			if msg := prescriptionValidationMessage(err); msg != "" {
+				web.PrescriptionNewPage(p, msg).Render(r.Context(), w)
 				return
 			}
 			slog.Error("creating prescription", "error", err)
@@ -185,7 +186,7 @@ func HandlePrescriptionEditPage(prescriptionGetter PrescriptionGetter, patientGe
 	}
 }
 
-// HandleUpdatePrescription validates the form and updates a prescription.
+// HandleUpdatePrescription parses the form and updates a prescription.
 func HandleUpdatePrescription(updater PrescriptionUpdater, prescriptionGetter PrescriptionGetter, patientGetter PatientGetter) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		patientID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -227,35 +228,7 @@ func HandleUpdatePrescription(updater PrescriptionUpdater, prescriptionGetter Pr
 			return
 		}
 
-		medicationName := r.FormValue("medication_name")
-		unitsPerBox, _ := strconv.Atoi(r.FormValue("units_per_box"))
-		dailyConsumption, _ := strconv.ParseFloat(r.FormValue("daily_consumption"), 64)
-		boxStartDate, _ := time.Parse("2006-01-02", r.FormValue("box_start_date"))
-
-		renderError := func(errMsg string) {
-			web.PrescriptionEditPage(p, rx, errMsg).Render(r.Context(), w)
-		}
-
-		if medicationName == "" {
-			renderError("Il nome del farmaco è obbligatorio.")
-			return
-		}
-		if unitsPerBox <= 0 {
-			renderError("Le unità per confezione devono essere maggiori di zero.")
-			return
-		}
-		if dailyConsumption <= 0 {
-			renderError("Il consumo giornaliero deve essere maggiore di zero.")
-			return
-		}
-		if boxStartDate.IsZero() {
-			renderError("La data di inizio confezione è obbligatoria.")
-			return
-		}
-		if dailyConsumption >= float64(unitsPerBox) {
-			renderError("Il consumo giornaliero deve essere inferiore alle unità per confezione.")
-			return
-		}
+		medicationName, unitsPerBox, dailyConsumption, boxStartDate := parsePrescriptionForm(r)
 
 		if err := updater.Update(r.Context(), prescription.UpdateParams{
 			ID:               rxID,
@@ -264,6 +237,10 @@ func HandleUpdatePrescription(updater PrescriptionUpdater, prescriptionGetter Pr
 			DailyConsumption: dailyConsumption,
 			BoxStartDate:     boxStartDate,
 		}); err != nil {
+			if msg := prescriptionValidationMessage(err); msg != "" {
+				web.PrescriptionEditPage(p, rx, msg).Render(r.Context(), w)
+				return
+			}
 			slog.Error("updating prescription", "error", err)
 			http.Error(w, "Errore interno.", http.StatusInternalServerError)
 			return

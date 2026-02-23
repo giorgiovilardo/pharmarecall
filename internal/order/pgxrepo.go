@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/dbutil"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -35,8 +35,8 @@ func (r *PgxRepository) Create(ctx context.Context, p CreateParams) (Order, erro
 
 	row, err := r.queries.WithTx(tx).CreateOrder(ctx, db.CreateOrderParams{
 		PrescriptionID:         p.PrescriptionID,
-		CycleStartDate:         timeToDate(p.CycleStartDate),
-		EstimatedDepletionDate: timeToDate(p.EstimatedDepletionDate),
+		CycleStartDate:         dbutil.TimeToDate(p.CycleStartDate),
+		EstimatedDepletionDate: dbutil.TimeToDate(p.EstimatedDepletionDate),
 		Status:                 StatusPending,
 	})
 	if err != nil {
@@ -53,7 +53,7 @@ func (r *PgxRepository) Create(ctx context.Context, p CreateParams) (Order, erro
 func (r *PgxRepository) HasActiveOrder(ctx context.Context, prescriptionID int64, cycleStartDate time.Time) (bool, error) {
 	_, err := r.queries.GetActiveOrderByPrescription(ctx, db.GetActiveOrderByPrescriptionParams{
 		PrescriptionID: prescriptionID,
-		CycleStartDate: timeToDate(cycleStartDate),
+		CycleStartDate: dbutil.TimeToDate(cycleStartDate),
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -79,7 +79,7 @@ func (r *PgxRepository) ListDashboard(ctx context.Context, pharmacyID int64) ([]
 			OrderStatus:            row.OrderStatus,
 			MedicationName:         row.MedicationName,
 			UnitsPerBox:            int(row.UnitsPerBox),
-			DailyConsumption:       numericToFloat64(row.DailyConsumption),
+			DailyConsumption:       dbutil.NumericToFloat64(row.DailyConsumption),
 			BoxStartDate:           row.BoxStartDate.Time,
 			PatientID:              row.PatientID,
 			FirstName:              row.FirstName,
@@ -128,12 +128,11 @@ func (r *PgxRepository) ListPrescriptionsForPharmacy(ctx context.Context, pharma
 	}
 	result := make([]PrescriptionSummary, len(rows))
 	for i, row := range rows {
-		dailyConsumption := numericToFloat64(row.DailyConsumption)
 		result[i] = PrescriptionSummary{
 			ID:               row.PrescriptionID,
 			PatientID:        row.PatientID,
 			UnitsPerBox:      int(row.UnitsPerBox),
-			DailyConsumption: dailyConsumption,
+			DailyConsumption: dbutil.NumericToFloat64(row.DailyConsumption),
 			BoxStartDate:     row.BoxStartDate.Time,
 		}
 	}
@@ -148,13 +147,4 @@ func mapOrder(row db.Order) Order {
 		EstimatedDepletionDate: row.EstimatedDepletionDate.Time,
 		Status:                 row.Status,
 	}
-}
-
-func numericToFloat64(n pgtype.Numeric) float64 {
-	f, _ := n.Float64Value()
-	return f.Float64
-}
-
-func timeToDate(t time.Time) pgtype.Date {
-	return pgtype.Date{Time: t, Valid: true}
 }

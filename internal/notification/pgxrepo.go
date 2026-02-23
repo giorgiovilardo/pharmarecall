@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/giorgiovilardo/pharmarecall/internal/dbutil"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -57,7 +57,7 @@ func (r *PgxRepository) ListByPharmacy(ctx context.Context, pharmacyID int64) ([
 			CreatedAt:        row.CreatedAt.Time,
 			MedicationName:   row.MedicationName,
 			UnitsPerBox:      int(row.UnitsPerBox),
-			DailyConsumption: numericToFloat64(row.DailyConsumption),
+			DailyConsumption: dbutil.NumericToFloat64(row.DailyConsumption),
 			BoxStartDate:     row.BoxStartDate.Time,
 			PatientID:        row.PatientID,
 			FirstName:        row.FirstName,
@@ -105,9 +105,3 @@ func (r *PgxRepository) CountUnread(ctx context.Context, pharmacyID int64) (int6
 	}
 	return count, nil
 }
-
-func numericToFloat64(n pgtype.Numeric) float64 {
-	f, _ := n.Float64Value()
-	return f.Float64
-}
-

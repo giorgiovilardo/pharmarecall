@@ -2,8 +2,9 @@ package notification
 
 import (
 	"errors"
-	"math"
 	"time"
+
+	"github.com/giorgiovilardo/pharmarecall/internal/depletion"
 )
 
 var (
@@ -34,6 +35,5 @@ type Notification struct {
 
 // EstimatedDepletionDate calculates when the prescription's current box runs out.
 func (n Notification) EstimatedDepletionDate() time.Time {
-	days := math.Floor(float64(n.UnitsPerBox) / n.DailyConsumption)
-	return n.BoxStartDate.AddDate(0, 0, int(days))
+	return depletion.EstimatedDate(n.UnitsPerBox, n.DailyConsumption, n.BoxStartDate)
 }

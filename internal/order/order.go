@@ -2,8 +2,9 @@ package order
 
 import (
 	"errors"
-	"math"
 	"time"
+
+	"github.com/giorgiovilardo/pharmarecall/internal/depletion"
 )
 
 var (
@@ -45,16 +46,12 @@ type PrescriptionSummary struct {
 
 // EstimatedDepletionDate calculates when this prescription's current box runs out.
 func (p PrescriptionSummary) EstimatedDepletionDate() time.Time {
-	days := math.Floor(float64(p.UnitsPerBox) / p.DailyConsumption)
-	return p.BoxStartDate.AddDate(0, 0, int(days))
+	return depletion.EstimatedDate(p.UnitsPerBox, p.DailyConsumption, p.BoxStartDate)
 }
 
 // DaysRemaining returns the number of days until depletion relative to now.
 func (p PrescriptionSummary) DaysRemaining(now time.Time) int {
-	depletion := p.EstimatedDepletionDate()
-	now = now.Truncate(24 * time.Hour)
-	depletion = depletion.Truncate(24 * time.Hour)
-	return int(depletion.Sub(now).Hours() / 24)
+	return depletion.DaysRemaining(p.EstimatedDepletionDate(), now)
 }
 
 // DashboardEntry combines order, prescription, and patient data for display.
@@ -79,22 +76,12 @@ type DashboardEntry struct {
 
 // DaysRemaining returns the number of days until estimated depletion.
 func (e DashboardEntry) DaysRemaining(now time.Time) int {
-	now = now.Truncate(24 * time.Hour)
-	depletion := e.EstimatedDepletionDate.Truncate(24 * time.Hour)
-	return int(depletion.Sub(now).Hours() / 24)
+	return depletion.DaysRemaining(e.EstimatedDepletionDate, now)
 }
 
 // PrescriptionStatus classifies the entry: "ok" (>7), "approaching" (<=7), "depleted" (<=0).
 func (e DashboardEntry) PrescriptionStatus(now time.Time) string {
-	days := e.DaysRemaining(now)
-	switch {
-	case days <= 0:
-		return "depleted"
-	case days <= 7:
-		return "approaching"
-	default:
-		return "ok"
-	}
+	return depletion.Status(e.DaysRemaining(now))
 }
 
 // NextStatus returns the next valid status in the lifecycle, or empty if terminal.

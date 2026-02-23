@@ -26,15 +26,6 @@ func (s *stubPharmacyGetter) Get(_ context.Context, _ int64) (pharmacy.Pharmacy,
 	return s.pharmacy, s.err
 }
 
-type stubPersonnelLister struct {
-	personnel []pharmacy.PersonnelMember
-	err       error
-}
-
-func (s *stubPersonnelLister) ListPersonnel(_ context.Context, _ int64) ([]pharmacy.PersonnelMember, error) {
-	return s.personnel, s.err
-}
-
 type stubPharmacyUpdater struct {
 	called bool
 	params pharmacy.UpdateParams
@@ -81,7 +72,7 @@ func TestPharmacyDetailRendersPharmacyAndPersonnel(t *testing.T) {
 		pharmacy: pharmacy.Pharmacy{ID: 1, Name: "Farmacia Rossi", Address: "Via Roma 1", Phone: "0123", Email: "f@example.com"},
 	}
 	personnel := &stubPersonnelLister{
-		personnel: []pharmacy.PersonnelMember{{Name: "Mario Rossi", Email: "mario@example.com", Role: "owner"}},
+		members: []pharmacy.PersonnelMember{{Name: "Mario Rossi", Email: "mario@example.com", Role: "owner"}},
 	}
 
 	sm := scs.New()

@@ -16,25 +16,25 @@ import (
 	"github.com/giorgiovilardo/pharmarecall/internal/web/handler"
 )
 
-type stubOwnerPersonnelLister struct {
+type stubPersonnelLister struct {
 	pharmacyID int64
 	members    []pharmacy.PersonnelMember
 	err        error
 }
 
-func (s *stubOwnerPersonnelLister) ListPersonnel(_ context.Context, pharmacyID int64) ([]pharmacy.PersonnelMember, error) {
+func (s *stubPersonnelLister) ListPersonnel(_ context.Context, pharmacyID int64) ([]pharmacy.PersonnelMember, error) {
 	s.pharmacyID = pharmacyID
 	return s.members, s.err
 }
 
-type stubOwnerPersonnelCreator struct {
+type stubPersonnelCreator struct {
 	called bool
 	params pharmacy.CreatePersonnelParams
 	member pharmacy.PersonnelMember
 	err    error
 }
 
-func (s *stubOwnerPersonnelCreator) CreatePersonnel(_ context.Context, p pharmacy.CreatePersonnelParams) (pharmacy.PersonnelMember, error) {
+func (s *stubPersonnelCreator) CreatePersonnel(_ context.Context, p pharmacy.CreatePersonnelParams) (pharmacy.PersonnelMember, error) {
 	s.called = true
 	s.params = p
 	return s.member, s.err
@@ -59,7 +59,7 @@ func ownerPersonnelTestServer(sm *scs.SessionManager, lister handler.PersonnelLi
 // --- Personnel list tests ---
 
 func TestOwnerPersonnelListRendersMembers(t *testing.T) {
-	lister := &stubOwnerPersonnelLister{
+	lister := &stubPersonnelLister{
 		members: []pharmacy.PersonnelMember{
 			{ID: 1, Name: "Anna Verdi", Email: "anna@example.com", Role: "personnel"},
 			{ID: 2, Name: "Marco Rossi", Email: "marco@example.com", Role: "owner"},
@@ -92,7 +92,7 @@ func TestOwnerPersonnelListRendersMembers(t *testing.T) {
 }
 
 func TestOwnerPersonnelListEmptyShowsMessage(t *testing.T) {
-	lister := &stubOwnerPersonnelLister{members: nil}
+	lister := &stubPersonnelLister{members: nil}
 
 	sm := scs.New()
 	srv := ownerPersonnelTestServer(sm, lister, nil)
@@ -112,7 +112,7 @@ func TestOwnerPersonnelListEmptyShowsMessage(t *testing.T) {
 }
 
 func TestOwnerPersonnelListDatabaseErrorReturns500(t *testing.T) {
-	lister := &stubOwnerPersonnelLister{err: errors.New("db down")}
+	lister := &stubPersonnelLister{err: errors.New("db down")}
 
 	sm := scs.New()
 	srv := ownerPersonnelTestServer(sm, lister, nil)
@@ -153,7 +153,7 @@ func TestOwnerAddPersonnelPageRendersForm(t *testing.T) {
 // --- Create personnel handler tests (4.4) ---
 
 func TestOwnerCreatePersonnelSuccessRedirects(t *testing.T) {
-	stub := &stubOwnerPersonnelCreator{member: pharmacy.PersonnelMember{ID: 5}}
+	stub := &stubPersonnelCreator{member: pharmacy.PersonnelMember{ID: 5}}
 
 	sm := scs.New()
 	srv := ownerPersonnelTestServer(sm, nil, stub)
@@ -185,7 +185,7 @@ func TestOwnerCreatePersonnelSuccessRedirects(t *testing.T) {
 }
 
 func TestOwnerCreatePersonnelMissingFieldsShowsError(t *testing.T) {
-	stub := &stubOwnerPersonnelCreator{}
+	stub := &stubPersonnelCreator{}
 
 	sm := scs.New()
 	srv := ownerPersonnelTestServer(sm, nil, stub)
@@ -213,7 +213,7 @@ func TestOwnerCreatePersonnelMissingFieldsShowsError(t *testing.T) {
 }
 
 func TestOwnerCreatePersonnelDuplicateEmailShowsError(t *testing.T) {
-	stub := &stubOwnerPersonnelCreator{err: pharmacy.ErrDuplicateEmail}
+	stub := &stubPersonnelCreator{err: pharmacy.ErrDuplicateEmail}
 
 	sm := scs.New()
 	srv := ownerPersonnelTestServer(sm, nil, stub)

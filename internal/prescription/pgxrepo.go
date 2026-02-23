@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
-	"math/big"
-	"time"
 
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/dbutil"
+	"github.com/giorgiovilardo/pharmarecall/internal/depletion"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -39,8 +37,8 @@ func (r *PgxRepository) Create(ctx context.Context, p CreateParams) (Prescriptio
 		PatientID:        p.PatientID,
 		MedicationName:   p.MedicationName,
 		UnitsPerBox:      int32(p.UnitsPerBox),
-		DailyConsumption: float64ToNumeric(p.DailyConsumption),
-		BoxStartDate:     timeToDate(p.BoxStartDate),
+		DailyConsumption: dbutil.Float64ToNumeric(p.DailyConsumption),
+		BoxStartDate:     dbutil.TimeToDate(p.BoxStartDate),
 	})
 	if err != nil {
 		return Prescription{}, fmt.Errorf("creating prescription: %w", err)
@@ -87,8 +85,8 @@ func (r *PgxRepository) Update(ctx context.Context, p UpdateParams) error {
 		ID:               p.ID,
 		MedicationName:   p.MedicationName,
 		UnitsPerBox:      int32(p.UnitsPerBox),
-		DailyConsumption: float64ToNumeric(p.DailyConsumption),
-		BoxStartDate:     timeToDate(p.BoxStartDate),
+		DailyConsumption: dbutil.Float64ToNumeric(p.DailyConsumption),
+		BoxStartDate:     dbutil.TimeToDate(p.BoxStartDate),
 	}); err != nil {
 		return fmt.Errorf("updating prescription: %w", err)
 	}
@@ -115,15 +113,14 @@ func (r *PgxRepository) RecordRefill(ctx context.Context, p RefillParams) error 
 	}
 
 	// Calculate the old box end date (depletion date).
-	dailyConsumption := numericToFloat64(current.DailyConsumption)
-	days := math.Floor(float64(current.UnitsPerBox) / dailyConsumption)
-	oldEnd := current.BoxStartDate.Time.AddDate(0, 0, int(days))
+	dailyConsumption := dbutil.NumericToFloat64(current.DailyConsumption)
+	oldEnd := depletion.EstimatedDate(int(current.UnitsPerBox), dailyConsumption, current.BoxStartDate.Time)
 
 	// Insert refill history for the previous cycle.
 	if err := qtx.InsertRefillHistory(ctx, db.InsertRefillHistoryParams{
 		PrescriptionID: p.PrescriptionID,
 		BoxStartDate:   current.BoxStartDate,
-		BoxEndDate:     timeToDate(oldEnd),
+		BoxEndDate:     dbutil.TimeToDate(oldEnd),
 	}); err != nil {
 		return fmt.Errorf("inserting refill history: %w", err)
 	}
@@ -134,7 +131,7 @@ func (r *PgxRepository) RecordRefill(ctx context.Context, p RefillParams) error 
 		MedicationName:   current.MedicationName,
 		UnitsPerBox:      current.UnitsPerBox,
 		DailyConsumption: current.DailyConsumption,
-		BoxStartDate:     timeToDate(p.NewStartDate),
+		BoxStartDate:     dbutil.TimeToDate(p.NewStartDate),
 	}); err != nil {
 		return fmt.Errorf("updating prescription start date: %w", err)
 	}
@@ -153,23 +150,7 @@ func mapPrescription(row db.Prescription) Prescription {
 		PatientID:        row.PatientID,
 		MedicationName:   row.MedicationName,
 		UnitsPerBox:      int(row.UnitsPerBox),
-		DailyConsumption: numericToFloat64(row.DailyConsumption),
+		DailyConsumption: dbutil.NumericToFloat64(row.DailyConsumption),
 		BoxStartDate:     row.BoxStartDate.Time,
 	}
-}
-
-func float64ToNumeric(f float64) pgtype.Numeric {
-	var n pgtype.Numeric
-	s := new(big.Float).SetFloat64(f).Text('f', -1)
-	n.ScanScientific(s)
-	return n
-}
-
-func numericToFloat64(n pgtype.Numeric) float64 {
-	f, _ := n.Float64Value()
-	return f.Float64
-}
-
-func timeToDate(t time.Time) pgtype.Date {
-	return pgtype.Date{Time: t, Valid: true}
 }

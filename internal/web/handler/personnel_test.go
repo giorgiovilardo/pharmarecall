@@ -1,7 +1,6 @@
 package handler_test
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,19 +12,6 @@ import (
 	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
 	"github.com/giorgiovilardo/pharmarecall/internal/web/handler"
 )
-
-type stubPersonnelCreator struct {
-	called bool
-	params pharmacy.CreatePersonnelParams
-	member pharmacy.PersonnelMember
-	err    error
-}
-
-func (s *stubPersonnelCreator) CreatePersonnel(_ context.Context, p pharmacy.CreatePersonnelParams) (pharmacy.PersonnelMember, error) {
-	s.called = true
-	s.params = p
-	return s.member, s.err
-}
 
 func personnelTestServer(sm *scs.SessionManager, creator handler.PersonnelCreator) *httptest.Server {
 	mux := http.NewServeMux()
