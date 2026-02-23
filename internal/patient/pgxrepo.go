@@ -10,6 +10,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Ensure PgxRepository satisfies Repository at compile time.
+var _ Repository = (*PgxRepository)(nil)
+
 // PgxRepository implements all patient port interfaces using pgx/sqlc.
 type PgxRepository struct {
 	pool    *pgxpool.Pool

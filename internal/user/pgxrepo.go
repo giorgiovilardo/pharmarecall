@@ -9,6 +9,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// Ensure PgxRepository satisfies Repository at compile time.
+var _ Repository = (*PgxRepository)(nil)
+
 // PgxRepository implements all user port interfaces using pgx/sqlc.
 type PgxRepository struct {
 	queries *db.Queries

@@ -9,6 +9,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Ensure PgxRepository satisfies Repository at compile time.
+var _ Repository = (*PgxRepository)(nil)
+
 // PgxRepository implements all notification port interfaces using pgx/sqlc.
 type PgxRepository struct {
 	pool    *pgxpool.Pool
@@ -108,5 +111,3 @@ func numericToFloat64(n pgtype.Numeric) float64 {
 	return f.Float64
 }
 
-// Ensure PgxRepository satisfies Repository at compile time.
-var _ Repository = (*PgxRepository)(nil)
