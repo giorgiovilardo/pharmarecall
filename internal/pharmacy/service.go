@@ -48,7 +48,7 @@ func (s *Service) CreateWithOwner(ctx context.Context, p CreateParams) (Pharmacy
 
 	ph, err := s.deps.Creator.CreateWithOwner(ctx, p, hash)
 	if err != nil {
-		return Pharmacy{}, err
+		return Pharmacy{}, fmt.Errorf("creating pharmacy with owner: %w", err)
 	}
 
 	return ph, nil
@@ -83,7 +83,7 @@ func (s *Service) CreatePersonnel(ctx context.Context, p CreatePersonnelParams) 
 
 	m, err := s.deps.PersCreator.CreatePersonnel(ctx, p, hash)
 	if err != nil {
-		return PersonnelMember{}, err
+		return PersonnelMember{}, fmt.Errorf("creating personnel member: %w", err)
 	}
 
 	return m, nil
