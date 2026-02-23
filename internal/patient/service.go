@@ -46,6 +46,15 @@ func (s *Service) Get(ctx context.Context, id int64) (Patient, error) {
 	return s.deps.Getter.GetByID(ctx, id)
 }
 
+// HasConsensus returns whether the patient has recorded consensus.
+func (s *Service) HasConsensus(ctx context.Context, patientID int64) (bool, error) {
+	p, err := s.deps.Getter.GetByID(ctx, patientID)
+	if err != nil {
+		return false, fmt.Errorf("checking patient consensus: %w", err)
+	}
+	return p.Consensus, nil
+}
+
 // Create validates and creates a patient.
 func (s *Service) Create(ctx context.Context, p CreateParams) (Patient, error) {
 	if p.FirstName == "" || p.LastName == "" {

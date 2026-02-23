@@ -2,10 +2,33 @@ package web
 
 import (
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/giorgiovilardo/pharmarecall/internal/patient"
+	"github.com/giorgiovilardo/pharmarecall/internal/prescription"
 )
 
-templ PatientDetailPage(p patient.Patient, errMsg string) {
+func fmtDate(t time.Time) string {
+	return t.Format("02/01/2006")
+}
+
+func fmtFloat(f float64) string {
+	return strconv.FormatFloat(f, 'f', -1, 64)
+}
+
+templ prescriptionStatusBadge(rx prescription.Prescription, now time.Time) {
+	switch rx.Status(now) {
+		case prescription.StatusOk:
+			<span class="badge success">ok</span>
+		case prescription.StatusApproaching:
+			<span class="badge warning">in esaurimento</span>
+		case prescription.StatusDepleted:
+			<span class="badge danger">esaurito</span>
+	}
+}
+
+templ PatientDetailPage(p patient.Patient, prescriptions []prescription.Prescription, now time.Time, errMsg string) {
 	@Layout(p.FirstName + " " + p.LastName) {
 		<h1>{ p.FirstName } { p.LastName }</h1>
 		if !p.Consensus {
@@ -58,5 +81,51 @@ templ PatientDetailPage(p patient.Patient, errMsg string) {
 				<a href="/patients" class="button outline">Torna ai pazienti</a>
 			</div>
 		</form>
+		<hr class="mt-6 mb-4"/>
+		<div class="hstack justify-between mb-4">
+			<h2>Prescrizioni</h2>
+			if p.Consensus {
+				<a href={ templ.SafeURL(fmt.Sprintf("/patients/%d/prescriptions/new", p.ID)) } class="button small">Aggiungi prescrizione</a>
+			}
+		</div>
+		if len(prescriptions) == 0 {
+			<p class="text-lighter">Nessuna prescrizione registrata.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Farmaco</th>
+						<th>Unità/conf.</th>
+						<th>Consumo/giorno</th>
+						<th>Inizio conf.</th>
+						<th>Esaurimento stimato</th>
+						<th>Giorni rim.</th>
+						<th>Stato</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, rx := range prescriptions {
+						<tr>
+							<td>{ rx.MedicationName }</td>
+							<td>{ strconv.Itoa(rx.UnitsPerBox) }</td>
+							<td>{ fmtFloat(rx.DailyConsumption) }</td>
+							<td>{ fmtDate(rx.BoxStartDate) }</td>
+							<td>{ fmtDate(rx.EstimatedDepletionDate()) }</td>
+							<td>{ strconv.Itoa(rx.DaysRemaining(now)) }</td>
+							<td>@prescriptionStatusBadge(rx, now)</td>
+							<td>
+								<div class="hstack gap-2">
+									<a href={ templ.SafeURL(fmt.Sprintf("/patients/%d/prescriptions/%d/edit", p.ID, rx.ID)) } class="button small outline">Modifica</a>
+									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/patients/%d/prescriptions/%d/refill", p.ID, rx.ID)) } style="margin: 0;">
+										<button type="submit" class="small" data-variant="secondary">Rifornimento</button>
+									</form>
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
 	}
 }

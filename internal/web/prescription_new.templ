@@ -1,0 +1,39 @@
+package web
+
+import (
+	"fmt"
+
+	"github.com/giorgiovilardo/pharmarecall/internal/patient"
+)
+
+templ PrescriptionNewPage(p patient.Patient, errMsg string) {
+	@Layout("Nuova Prescrizione - " + p.FirstName + " " + p.LastName) {
+		<h1>Nuova Prescrizione</h1>
+		<p>Paziente: <strong>{ p.FirstName } { p.LastName }</strong></p>
+		if errMsg != "" {
+			<div role="alert" data-variant="danger">{ errMsg }</div>
+		}
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/patients/%d/prescriptions", p.ID)) }>
+			<label data-field>
+				Nome farmaco *
+				<input type="text" name="medication_name" required/>
+			</label>
+			<label data-field>
+				Unità per confezione *
+				<input type="number" name="units_per_box" min="1" required/>
+			</label>
+			<label data-field>
+				Consumo giornaliero (unità/giorno) *
+				<input type="number" name="daily_consumption" min="0.01" step="0.01" required/>
+			</label>
+			<label data-field>
+				Data inizio confezione *
+				<input type="date" name="box_start_date" required/>
+			</label>
+			<div class="hstack gap-2 mt-4">
+				<button type="submit">Crea prescrizione</button>
+				<a href={ templ.SafeURL(fmt.Sprintf("/patients/%d", p.ID)) } class="button outline">Annulla</a>
+			</div>
+		</form>
+	}
+}

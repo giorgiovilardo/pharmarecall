@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/giorgiovilardo/pharmarecall/internal/patient"
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
@@ -114,8 +115,8 @@ func HandleCreatePatient(creator PatientCreator) http.HandlerFunc {
 	}
 }
 
-// HandlePatientDetail renders the patient detail/edit page.
-func HandlePatientDetail(getter PatientGetter) http.HandlerFunc {
+// HandlePatientDetail renders the patient detail/edit page with prescriptions.
+func HandlePatientDetail(getter PatientGetter, rxLister PrescriptionLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 		if err != nil {
@@ -134,12 +135,19 @@ func HandlePatientDetail(getter PatientGetter) http.HandlerFunc {
 			return
 		}
 
-		web.PatientDetailPage(p, "").Render(r.Context(), w)
+		rxs, err := rxLister.ListByPatient(r.Context(), id)
+		if err != nil {
+			slog.Error("listing prescriptions", "error", err)
+			http.Error(w, "Errore interno.", http.StatusInternalServerError)
+			return
+		}
+
+		web.PatientDetailPage(p, rxs, time.Now(), "").Render(r.Context(), w)
 	}
 }
 
 // HandleUpdatePatient validates the form and updates a patient.
-func HandleUpdatePatient(getter PatientGetter, updater PatientUpdater) http.HandlerFunc {
+func HandleUpdatePatient(getter PatientGetter, updater PatientUpdater, rxLister PrescriptionLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 		if err != nil {
@@ -162,7 +170,8 @@ func HandleUpdatePatient(getter PatientGetter, updater PatientUpdater) http.Hand
 
 		renderError := func(errMsg string) {
 			p, _ := getter.Get(r.Context(), id)
-			web.PatientDetailPage(p, errMsg).Render(r.Context(), w)
+			rxs, _ := rxLister.ListByPatient(r.Context(), id)
+			web.PatientDetailPage(p, rxs, time.Now(), errMsg).Render(r.Context(), w)
 		}
 
 		if firstName == "" || lastName == "" {

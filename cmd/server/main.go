@@ -19,6 +19,7 @@ import (
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
 	"github.com/giorgiovilardo/pharmarecall/internal/patient"
 	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
+	"github.com/giorgiovilardo/pharmarecall/internal/prescription"
 	"github.com/giorgiovilardo/pharmarecall/internal/user"
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
 	"github.com/giorgiovilardo/pharmarecall/internal/web/handler"
@@ -72,6 +73,9 @@ func run() error {
 	patientRepo := patient.NewPgxRepository(pool, queries)
 	patientSvc := patient.NewService(patientRepo)
 
+	prescriptionRepo := prescription.NewPgxRepository(pool, queries)
+	prescriptionSvc := prescription.NewService(prescriptionRepo, patientSvc)
+
 	// Build handlers
 	mux := web.NewRouter(web.Handlers{
 		LoginPage:      handler.HandleLoginPage(),
@@ -88,9 +92,16 @@ func run() error {
 			List:         handler.HandlePatientList(patientSvc),
 			New:          handler.HandleNewPatientPage(),
 			Create:       handler.HandleCreatePatient(patientSvc),
-			Detail:       handler.HandlePatientDetail(patientSvc),
-			Update:       handler.HandleUpdatePatient(patientSvc, patientSvc),
+			Detail:       handler.HandlePatientDetail(patientSvc, prescriptionSvc),
+			Update:       handler.HandleUpdatePatient(patientSvc, patientSvc, prescriptionSvc),
 			SetConsensus: handler.HandleSetConsensus(patientSvc),
+		},
+		Prescription: web.PrescriptionHandlers{
+			New:          handler.HandleNewPrescriptionPage(patientSvc),
+			Create:       handler.HandleCreatePrescription(prescriptionSvc, patientSvc),
+			Edit:         handler.HandlePrescriptionEditPage(prescriptionSvc, patientSvc),
+			Update:       handler.HandleUpdatePrescription(prescriptionSvc, prescriptionSvc, patientSvc),
+			RecordRefill: handler.HandleRecordRefill(prescriptionSvc),
 		},
 		Admin: web.AdminHandlers{
 			Dashboard:       handler.HandleAdminDashboard(pharmacySvc),

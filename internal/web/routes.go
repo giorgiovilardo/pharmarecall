@@ -34,6 +34,15 @@ type PatientHandlers struct {
 	SetConsensus http.HandlerFunc
 }
 
+// PrescriptionHandlers groups all prescription handler funcs.
+type PrescriptionHandlers struct {
+	New          http.HandlerFunc
+	Create       http.HandlerFunc
+	Edit         http.HandlerFunc
+	Update       http.HandlerFunc
+	RecordRefill http.HandlerFunc
+}
+
 // Handlers groups all handler funcs for routing.
 type Handlers struct {
 	LoginPage      http.HandlerFunc
@@ -44,6 +53,7 @@ type Handlers struct {
 	Admin          AdminHandlers
 	Owner          OwnerHandlers
 	Patient        PatientHandlers
+	Prescription   PrescriptionHandlers
 }
 
 // NewRouter builds the ServeMux with all routes. Handlers are constructed
@@ -87,6 +97,13 @@ func NewRouter(h Handlers) *http.ServeMux {
 	mux.Handle("GET /patients/{id}", RequirePharmacyStaff(http.HandlerFunc(h.Patient.Detail)))
 	mux.Handle("POST /patients/{id}", RequirePharmacyStaff(http.HandlerFunc(h.Patient.Update)))
 	mux.Handle("POST /patients/{id}/consensus", RequirePharmacyStaff(http.HandlerFunc(h.Patient.SetConsensus)))
+
+	// Prescription routes — RequirePharmacyStaff middleware
+	mux.Handle("GET /patients/{id}/prescriptions/new", RequirePharmacyStaff(http.HandlerFunc(h.Prescription.New)))
+	mux.Handle("POST /patients/{id}/prescriptions", RequirePharmacyStaff(http.HandlerFunc(h.Prescription.Create)))
+	mux.Handle("GET /patients/{id}/prescriptions/{rxid}/edit", RequirePharmacyStaff(http.HandlerFunc(h.Prescription.Edit)))
+	mux.Handle("POST /patients/{id}/prescriptions/{rxid}", RequirePharmacyStaff(http.HandlerFunc(h.Prescription.Update)))
+	mux.Handle("POST /patients/{id}/prescriptions/{rxid}/refill", RequirePharmacyStaff(http.HandlerFunc(h.Prescription.RecordRefill)))
 
 	return mux
 }

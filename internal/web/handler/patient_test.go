@@ -12,6 +12,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/giorgiovilardo/pharmarecall/internal/patient"
+	"github.com/giorgiovilardo/pharmarecall/internal/prescription"
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
 	"github.com/giorgiovilardo/pharmarecall/internal/web/handler"
 )
@@ -77,6 +78,15 @@ func (s *stubConsensusRecorder) SetConsensus(_ context.Context, id int64) error 
 	return s.err
 }
 
+type stubPrescriptionLister struct {
+	prescriptions []prescription.Prescription
+	err           error
+}
+
+func (s *stubPrescriptionLister) ListByPatient(_ context.Context, _ int64) ([]prescription.Prescription, error) {
+	return s.prescriptions, s.err
+}
+
 // --- Test server ---
 
 type patientTestDeps struct {
@@ -86,6 +96,7 @@ type patientTestDeps struct {
 	getter    handler.PatientGetter
 	updater   handler.PatientUpdater
 	consensus handler.PatientConsensusRecorder
+	rxLister  handler.PrescriptionLister
 }
 
 func patientTestServer(sm *scs.SessionManager, lister handler.PatientLister, creator handler.PatientCreator) *httptest.Server {
@@ -93,6 +104,9 @@ func patientTestServer(sm *scs.SessionManager, lister handler.PatientLister, cre
 }
 
 func patientTestServerFull(d patientTestDeps) *httptest.Server {
+	if d.rxLister == nil {
+		d.rxLister = &stubPrescriptionLister{}
+	}
 	mux := http.NewServeMux()
 	if d.lister != nil {
 		mux.Handle("GET /patients", web.RequireAuth(http.HandlerFunc(handler.HandlePatientList(d.lister))))
@@ -102,10 +116,10 @@ func patientTestServerFull(d patientTestDeps) *httptest.Server {
 		mux.Handle("POST /patients", web.RequireAuth(http.HandlerFunc(handler.HandleCreatePatient(d.creator))))
 	}
 	if d.getter != nil {
-		mux.Handle("GET /patients/{id}", web.RequireAuth(http.HandlerFunc(handler.HandlePatientDetail(d.getter))))
+		mux.Handle("GET /patients/{id}", web.RequireAuth(http.HandlerFunc(handler.HandlePatientDetail(d.getter, d.rxLister))))
 	}
 	if d.getter != nil && d.updater != nil {
-		mux.Handle("POST /patients/{id}", web.RequireAuth(http.HandlerFunc(handler.HandleUpdatePatient(d.getter, d.updater))))
+		mux.Handle("POST /patients/{id}", web.RequireAuth(http.HandlerFunc(handler.HandleUpdatePatient(d.getter, d.updater, d.rxLister))))
 	}
 	if d.consensus != nil {
 		mux.Handle("POST /patients/{id}/consensus", web.RequireAuth(http.HandlerFunc(handler.HandleSetConsensus(d.consensus))))

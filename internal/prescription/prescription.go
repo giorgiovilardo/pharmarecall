@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	ErrNotFound     = errors.New("prescription not found")
-	ErrNoConsensus  = errors.New("il paziente deve dare il consenso prima di aggiungere prescrizioni")
+	ErrNotFound    = errors.New("prescription not found")
+	ErrNoConsensus = errors.New("il paziente deve dare il consenso prima di aggiungere prescrizioni")
 )
 
 // Status constants for prescription depletion classification.
@@ -57,4 +57,28 @@ func (p Prescription) Status(now time.Time) string {
 	default:
 		return StatusOk
 	}
+}
+
+// CreateParams holds the data needed to create a prescription.
+type CreateParams struct {
+	PatientID        int64
+	MedicationName   string
+	UnitsPerBox      int
+	DailyConsumption float64
+	BoxStartDate     time.Time
+}
+
+// UpdateParams holds the data needed to update a prescription.
+type UpdateParams struct {
+	ID               int64
+	MedicationName   string
+	UnitsPerBox      int
+	DailyConsumption float64
+	BoxStartDate     time.Time
+}
+
+// RefillParams holds the data needed to record a refill.
+type RefillParams struct {
+	PrescriptionID int64
+	NewStartDate   time.Time
 }

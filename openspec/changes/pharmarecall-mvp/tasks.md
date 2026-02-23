@@ -70,12 +70,12 @@
 - [x] 6.3 Write sqlc queries for prescriptions: CreatePrescription, ListPrescriptionsByPatient, GetPrescriptionByID, UpdatePrescription, InsertRefillHistory
 - [x] 6.4 Implement depletion calculation: box_start_date + floor(units_per_box / daily_consumption) days
 - [x] 6.5 Implement prescription status classification: ok (>7 days), approaching (<=7 days), depleted (<=0 days)
-- [ ] 6.6 Create prescription creation form on patient detail page: medication name, units per box, daily consumption, box start date
-- [ ] 6.7 Implement prescription creation handler (block if patient has no consensus)
-- [ ] 6.8 Create prescription edit form and update handler
-- [ ] 6.9 Implement refill recording: update box_start_date, insert previous period into refill_history, auto-fulfill any active order for the previous cycle
-- [ ] 6.10 Display prescription list on patient detail page with status badges, estimated depletion, and refill button
-- [ ] 6.11 Verify end-to-end: add prescription to patient, see depletion calculation, edit prescription, record refill, see history
+- [x] 6.6 Create prescription creation form on patient detail page: medication name, units per box, daily consumption, box start date
+- [x] 6.7 Implement prescription creation handler (block if patient has no consensus)
+- [x] 6.8 Create prescription edit form and update handler
+- [x] 6.9 Implement refill recording: update box_start_date, insert previous period into refill_history, auto-fulfill any active order for the previous cycle
+- [x] 6.10 Display prescription list on patient detail page with status badges, estimated depletion, and refill button
+- [x] 6.11 Verify end-to-end: add prescription to patient, see depletion calculation, edit prescription, record refill, see history
 
 ## 7. Order Dashboard
 
