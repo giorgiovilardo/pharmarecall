@@ -8,6 +8,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Patient struct {
+	ID              int64
+	PharmacyID      int64
+	FirstName       string
+	LastName        string
+	Phone           string
+	Email           string
+	DeliveryAddress string
+	Fulfillment     string
+	Notes           string
+	Consensus       bool
+	ConsensusDate   pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
 type Pharmacy struct {
 	ID        int64
 	Name      string
