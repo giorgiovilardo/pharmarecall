@@ -8,6 +8,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Notification struct {
+	ID             int64
+	PharmacyID     int64
+	PrescriptionID int64
+	TransitionType string
+	Read           bool
+	CreatedAt      pgtype.Timestamptz
+}
+
 type Order struct {
 	ID                     int64
 	PrescriptionID         int64
