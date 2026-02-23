@@ -2,7 +2,6 @@ package prescription
 
 import (
 	"context"
-	"errors"
 	"fmt"
 )
 
@@ -96,19 +95,19 @@ func (s *Service) RecordRefill(ctx context.Context, p RefillParams) error {
 
 func validatePrescription(medicationName string, unitsPerBox int, dailyConsumption float64, boxStartDate interface{ IsZero() bool }) error {
 	if medicationName == "" {
-		return errors.New("il nome del farmaco è obbligatorio")
+		return ErrMedicationRequired
 	}
 	if unitsPerBox <= 0 {
-		return errors.New("le unità per confezione devono essere maggiori di zero")
+		return ErrInvalidUnitsPerBox
 	}
 	if dailyConsumption <= 0 {
-		return errors.New("il consumo giornaliero deve essere maggiore di zero")
+		return ErrInvalidConsumption
 	}
 	if boxStartDate.IsZero() {
-		return errors.New("la data di inizio confezione è obbligatoria")
+		return ErrStartDateRequired
 	}
 	if dailyConsumption >= float64(unitsPerBox) {
-		return errors.New("il consumo giornaliero deve essere inferiore alle unità per confezione (la confezione deve durare almeno un giorno)")
+		return ErrConsumptionExceedsBox
 	}
 	return nil
 }

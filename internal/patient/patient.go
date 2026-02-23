@@ -3,7 +3,10 @@ package patient
 import "errors"
 
 var (
-	ErrNotFound = errors.New("patient not found")
+	ErrNotFound             = errors.New("patient not found")
+	ErrNameRequired         = errors.New("il nome e il cognome sono obbligatori")
+	ErrContactRequired      = errors.New("è necessario almeno un contatto (telefono o email)")
+	ErrDeliveryAddrRequired = errors.New("l'indirizzo di consegna è obbligatorio per la spedizione")
 )
 
 // Fulfillment constants.

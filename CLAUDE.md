@@ -131,8 +131,8 @@ Artifacts location: `openspec/changes/pharmarecall-mvp/`
 - **Small interfaces**: prefer single-method interfaces. Compose into `Repository` only for wiring convenience.
 - **No shared interfaces by default**: only extract an interface to a common package if it's genuinely needed everywhere (e.g., a `Clock` interface wrapping `Now()`). Start with a local interface in the consumer package.
 - **Manual mocks in tests**: no mocking frameworks. Write simple structs that implement the interface in test files. Mock only the port you're testing (not all 6).
-- **Domain errors**: define sentinel errors in domain packages (`user.ErrInvalidCredentials`, `pharmacy.ErrNotFound`). Handlers check `errors.Is()` to map domain errors to HTTP responses.
-- **Error wrapping**: always wrap errors with context using `fmt.Errorf("doing something: %w", err)`. Never bare `return err`.
+- **Domain errors as sentinels**: ALL domain errors — including validation errors — MUST be declared as `var Err... = errors.New(...)` in a single `var` block at the top of the domain type file (`user.go`, `pharmacy.go`, `patient.go`, `prescription.go`). Never use inline `errors.New(...)` in service functions. Handlers check `errors.Is()` to map domain errors to HTTP responses.
+- **Error wrapping**: always wrap errors with context using `fmt.Errorf("doing something: %w", err)`. Never bare `return err`. Wrapping (`fmt.Errorf` with `%w`) is the only place where errors are created inside functions — sentinel errors handle all other cases.
 - **Table-driven tests**: use table-driven tests as the default pattern, especially for calculation and validation logic.
 - **Structured logging**: use `log/slog` from stdlib. No `log.Println` or `fmt.Printf` for logging.
 - **Use `new(expr)` for pointer values**: Go 1.26 allows `new(someExpression)` — use it instead of helper functions or address-of workarounds for optional pointer fields.

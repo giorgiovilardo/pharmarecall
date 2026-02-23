@@ -7,8 +7,13 @@ import (
 )
 
 var (
-	ErrNotFound    = errors.New("prescription not found")
-	ErrNoConsensus = errors.New("il paziente deve dare il consenso prima di aggiungere prescrizioni")
+	ErrNotFound              = errors.New("prescription not found")
+	ErrNoConsensus           = errors.New("il paziente deve dare il consenso prima di aggiungere prescrizioni")
+	ErrMedicationRequired    = errors.New("il nome del farmaco è obbligatorio")
+	ErrInvalidUnitsPerBox    = errors.New("le unità per confezione devono essere maggiori di zero")
+	ErrInvalidConsumption    = errors.New("il consumo giornaliero deve essere maggiore di zero")
+	ErrStartDateRequired     = errors.New("la data di inizio confezione è obbligatoria")
+	ErrConsumptionExceedsBox = errors.New("il consumo giornaliero deve essere inferiore alle unità per confezione (la confezione deve durare almeno un giorno)")
 )
 
 // Status constants for prescription depletion classification.

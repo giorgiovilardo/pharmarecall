@@ -2,7 +2,6 @@ package patient
 
 import (
 	"context"
-	"errors"
 	"fmt"
 )
 
@@ -58,16 +57,16 @@ func (s *Service) HasConsensus(ctx context.Context, patientID int64) (bool, erro
 // Create validates and creates a patient.
 func (s *Service) Create(ctx context.Context, p CreateParams) (Patient, error) {
 	if p.FirstName == "" || p.LastName == "" {
-		return Patient{}, errors.New("il nome e il cognome sono obbligatori")
+		return Patient{}, ErrNameRequired
 	}
 	if p.Phone == "" && p.Email == "" {
-		return Patient{}, errors.New("è necessario almeno un contatto (telefono o email)")
+		return Patient{}, ErrContactRequired
 	}
 	if p.Fulfillment == "" {
 		p.Fulfillment = FulfillmentPickup
 	}
 	if p.Fulfillment == FulfillmentShipping && p.DeliveryAddress == "" {
-		return Patient{}, errors.New("l'indirizzo di consegna è obbligatorio per la spedizione")
+		return Patient{}, ErrDeliveryAddrRequired
 	}
 
 	pt, err := s.deps.Creator.Create(ctx, p)
@@ -80,13 +79,13 @@ func (s *Service) Create(ctx context.Context, p CreateParams) (Patient, error) {
 // Update validates and updates a patient.
 func (s *Service) Update(ctx context.Context, p UpdateParams) error {
 	if p.FirstName == "" || p.LastName == "" {
-		return errors.New("il nome e il cognome sono obbligatori")
+		return ErrNameRequired
 	}
 	if p.Phone == "" && p.Email == "" {
-		return errors.New("è necessario almeno un contatto (telefono o email)")
+		return ErrContactRequired
 	}
 	if p.Fulfillment == FulfillmentShipping && p.DeliveryAddress == "" {
-		return errors.New("l'indirizzo di consegna è obbligatorio per la spedizione")
+		return ErrDeliveryAddrRequired
 	}
 
 	if err := s.deps.Updater.Update(ctx, p); err != nil {
