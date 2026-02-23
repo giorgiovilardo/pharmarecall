@@ -1,4 +1,4 @@
-package web_test
+package handler_test
 
 import (
 	"net/http"
@@ -6,21 +6,19 @@ import (
 	"testing"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/giorgiovilardo/pharmarecall/internal/web"
+	"github.com/giorgiovilardo/pharmarecall/internal/web/handler"
 )
 
 func TestLogoutDestroysSessionAndRedirects(t *testing.T) {
 	sm := scs.New()
 
 	mux := http.NewServeMux()
-	// Setup route to create a session
 	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
 		sm.Put(r.Context(), "userID", int64(1))
 		sm.Put(r.Context(), "role", "personnel")
 		w.WriteHeader(http.StatusOK)
 	})
-	mux.HandleFunc("POST /logout", web.HandleLogout(sm))
-	// A protected-like route that checks if session has userID
+	mux.HandleFunc("POST /logout", handler.HandleLogout(sm))
 	mux.HandleFunc("GET /check-session", func(w http.ResponseWriter, r *http.Request) {
 		if sm.GetInt64(r.Context(), "userID") != 0 {
 			w.WriteHeader(http.StatusOK)
@@ -34,7 +32,6 @@ func TestLogoutDestroysSessionAndRedirects(t *testing.T) {
 
 	client := noFollowClient()
 
-	// Create a session
 	setupResp, err := client.Get(srv.URL + "/setup-session")
 	if err != nil {
 		t.Fatalf("setting up session: %v", err)
@@ -42,7 +39,6 @@ func TestLogoutDestroysSessionAndRedirects(t *testing.T) {
 	setupResp.Body.Close()
 	cookies := setupResp.Cookies()
 
-	// Logout
 	req, err := http.NewRequest(http.MethodPost, srv.URL+"/logout", nil)
 	if err != nil {
 		t.Fatalf("creating logout request: %v", err)
@@ -64,7 +60,6 @@ func TestLogoutDestroysSessionAndRedirects(t *testing.T) {
 		t.Errorf("POST /logout redirect = %q, want /login", loc)
 	}
 
-	// Verify session is destroyed — use the cookie from logout response
 	logoutCookies := logoutResp.Cookies()
 	checkReq, err := http.NewRequest(http.MethodGet, srv.URL+"/check-session", nil)
 	if err != nil {

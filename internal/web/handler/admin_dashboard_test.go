@@ -1,4 +1,4 @@
-package web_test
+package handler_test
 
 import (
 	"context"
@@ -10,22 +10,23 @@ import (
 	"testing"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
+	"github.com/giorgiovilardo/pharmarecall/internal/web/handler"
 )
 
 type stubPharmacyLister struct {
-	pharmacies []db.ListPharmaciesRow
+	pharmacies []pharmacy.Summary
 	err        error
 }
 
-func (s *stubPharmacyLister) ListPharmacies(_ context.Context) ([]db.ListPharmaciesRow, error) {
+func (s *stubPharmacyLister) List(_ context.Context) ([]pharmacy.Summary, error) {
 	return s.pharmacies, s.err
 }
 
-func adminDashboardTestServer(sm *scs.SessionManager, lister web.PharmacyLister) *httptest.Server {
+func adminDashboardTestServer(sm *scs.SessionManager, lister handler.PharmacyLister) *httptest.Server {
 	mux := http.NewServeMux()
-	mux.Handle("GET /admin", web.RequireAdmin(http.HandlerFunc(web.HandleAdminDashboard(lister))))
+	mux.Handle("GET /admin", web.RequireAdmin(http.HandlerFunc(handler.HandleAdminDashboard(lister))))
 	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
 		sm.Put(r.Context(), "userID", int64(1))
 		sm.Put(r.Context(), "role", "admin")
@@ -34,34 +35,9 @@ func adminDashboardTestServer(sm *scs.SessionManager, lister web.PharmacyLister)
 	return httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(mux)))
 }
 
-func authenticatedGet(t *testing.T, srv *httptest.Server, path string) *http.Response {
-	t.Helper()
-	client := noFollowClient()
-
-	setupResp, err := client.Get(srv.URL + "/setup-session")
-	if err != nil {
-		t.Fatalf("setting up session: %v", err)
-	}
-	setupResp.Body.Close()
-
-	req, err := http.NewRequest(http.MethodGet, srv.URL+path, nil)
-	if err != nil {
-		t.Fatalf("creating request: %v", err)
-	}
-	for _, c := range setupResp.Cookies() {
-		req.AddCookie(c)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		t.Fatalf("requesting %s: %v", path, err)
-	}
-	return resp
-}
-
 func TestAdminDashboardRendersPharmacyList(t *testing.T) {
 	lister := &stubPharmacyLister{
-		pharmacies: []db.ListPharmaciesRow{
+		pharmacies: []pharmacy.Summary{
 			{ID: 1, Name: "Farmacia Rossi", Address: "Via Roma 1", PersonnelCount: 3},
 			{ID: 2, Name: "Farmacia Bianchi", Address: "Via Milano 5", PersonnelCount: 1},
 		},

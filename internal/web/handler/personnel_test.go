@@ -1,4 +1,4 @@
-package web_test
+package handler_test
 
 import (
 	"context"
@@ -10,30 +10,27 @@ import (
 	"testing"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/giorgiovilardo/pharmarecall/internal/db"
-	"github.com/giorgiovilardo/pharmarecall/internal/web"
-	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
+	"github.com/giorgiovilardo/pharmarecall/internal/web/handler"
 )
 
-type stubCreatePersonnel struct {
+type stubPersonnelCreator struct {
 	called bool
-	params db.CreateUserParams
-	user   db.User
+	params pharmacy.CreatePersonnelParams
+	member pharmacy.PersonnelMember
 	err    error
 }
 
-func (s *stubCreatePersonnel) fn() web.CreatePersonnelFunc {
-	return func(_ context.Context, arg db.CreateUserParams) (db.User, error) {
-		s.called = true
-		s.params = arg
-		return s.user, s.err
-	}
+func (s *stubPersonnelCreator) CreatePersonnel(_ context.Context, p pharmacy.CreatePersonnelParams) (pharmacy.PersonnelMember, error) {
+	s.called = true
+	s.params = p
+	return s.member, s.err
 }
 
-func personnelTestServer(sm *scs.SessionManager, createFn web.CreatePersonnelFunc) *httptest.Server {
+func personnelTestServer(sm *scs.SessionManager, creator handler.PersonnelCreator) *httptest.Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /admin/pharmacies/{id}/personnel/new", web.HandleAddPersonnelPage())
-	mux.HandleFunc("POST /admin/pharmacies/{id}/personnel", web.HandleCreatePersonnel(createFn))
+	mux.HandleFunc("GET /admin/pharmacies/{id}/personnel/new", handler.HandleAddPersonnelPage())
+	mux.HandleFunc("POST /admin/pharmacies/{id}/personnel", handler.HandleCreatePersonnel(creator))
 	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
 		sm.Put(r.Context(), "userID", int64(1))
 		sm.Put(r.Context(), "role", "admin")
@@ -64,10 +61,10 @@ func TestAddPersonnelPageRendersForm(t *testing.T) {
 }
 
 func TestCreatePersonnelSuccessRedirects(t *testing.T) {
-	stub := &stubCreatePersonnel{user: db.User{ID: 5}}
+	stub := &stubPersonnelCreator{member: pharmacy.PersonnelMember{ID: 5}}
 
 	sm := scs.New()
-	srv := personnelTestServer(sm, stub.fn())
+	srv := personnelTestServer(sm, stub)
 	defer srv.Close()
 
 	form := url.Values{
@@ -90,16 +87,16 @@ func TestCreatePersonnelSuccessRedirects(t *testing.T) {
 	if stub.params.Role != "personnel" {
 		t.Errorf("role = %q, want personnel", stub.params.Role)
 	}
-	if !stub.params.PharmacyID.Valid || stub.params.PharmacyID.Int64 != 1 {
-		t.Errorf("pharmacyID = %+v, want {Int64:1, Valid:true}", stub.params.PharmacyID)
+	if stub.params.PharmacyID != 1 {
+		t.Errorf("pharmacyID = %d, want 1", stub.params.PharmacyID)
 	}
 }
 
 func TestCreatePersonnelWithOwnerCheckbox(t *testing.T) {
-	stub := &stubCreatePersonnel{user: db.User{ID: 6}}
+	stub := &stubPersonnelCreator{member: pharmacy.PersonnelMember{ID: 6}}
 
 	sm := scs.New()
-	srv := personnelTestServer(sm, stub.fn())
+	srv := personnelTestServer(sm, stub)
 	defer srv.Close()
 
 	form := url.Values{
@@ -120,10 +117,10 @@ func TestCreatePersonnelWithOwnerCheckbox(t *testing.T) {
 }
 
 func TestCreatePersonnelMissingFieldsShowsError(t *testing.T) {
-	stub := &stubCreatePersonnel{}
+	stub := &stubPersonnelCreator{}
 
 	sm := scs.New()
-	srv := personnelTestServer(sm, stub.fn())
+	srv := personnelTestServer(sm, stub)
 	defer srv.Close()
 
 	form := url.Values{
@@ -148,10 +145,10 @@ func TestCreatePersonnelMissingFieldsShowsError(t *testing.T) {
 }
 
 func TestCreatePersonnelDuplicateEmailShowsError(t *testing.T) {
-	stub := &stubCreatePersonnel{err: &pgconn.PgError{Code: "23505"}}
+	stub := &stubPersonnelCreator{err: pharmacy.ErrDuplicateEmail}
 
 	sm := scs.New()
-	srv := personnelTestServer(sm, stub.fn())
+	srv := personnelTestServer(sm, stub)
 	defer srv.Close()
 
 	form := url.Values{

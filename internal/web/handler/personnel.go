@@ -1,18 +1,20 @@
-package web
+package handler
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
 
-	"github.com/giorgiovilardo/pharmarecall/internal/auth"
-	"github.com/giorgiovilardo/pharmarecall/internal/db"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
+	"github.com/giorgiovilardo/pharmarecall/internal/web"
 )
 
-// CreatePersonnelFunc creates a personnel user scoped to a pharmacy, transactionally.
-type CreatePersonnelFunc func(ctx context.Context, arg db.CreateUserParams) (db.User, error)
+// PersonnelCreator creates a personnel member for a pharmacy.
+type PersonnelCreator interface {
+	CreatePersonnel(ctx context.Context, p pharmacy.CreatePersonnelParams) (pharmacy.PersonnelMember, error)
+}
 
 // HandleAddPersonnelPage renders the add-personnel form for a pharmacy.
 func HandleAddPersonnelPage() http.HandlerFunc {
@@ -22,12 +24,12 @@ func HandleAddPersonnelPage() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		AddPersonnelPage(id, "").Render(r.Context(), w)
+		web.AddPersonnelPage(id, "").Render(r.Context(), w)
 	}
 }
 
 // HandleCreatePersonnel creates a new personnel user scoped to a pharmacy.
-func HandleCreatePersonnel(createFn CreatePersonnelFunc) http.HandlerFunc {
+func HandleCreatePersonnel(creator PersonnelCreator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pharmacyID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 		if err != nil {
@@ -36,7 +38,7 @@ func HandleCreatePersonnel(createFn CreatePersonnelFunc) http.HandlerFunc {
 		}
 
 		if err := r.ParseForm(); err != nil {
-			AddPersonnelPage(pharmacyID, "Richiesta non valida.").Render(r.Context(), w)
+			web.AddPersonnelPage(pharmacyID, "Richiesta non valida.").Render(r.Context(), w)
 			return
 		}
 
@@ -45,14 +47,7 @@ func HandleCreatePersonnel(createFn CreatePersonnelFunc) http.HandlerFunc {
 		password := r.FormValue("password")
 
 		if name == "" || email == "" || password == "" {
-			AddPersonnelPage(pharmacyID, "Tutti i campi sono obbligatori.").Render(r.Context(), w)
-			return
-		}
-
-		hash, err := auth.HashPassword(password)
-		if err != nil {
-			slog.Error("hashing personnel password", "error", err)
-			http.Error(w, "Errore interno.", http.StatusInternalServerError)
+			web.AddPersonnelPage(pharmacyID, "Tutti i campi sono obbligatori.").Render(r.Context(), w)
 			return
 		}
 
@@ -61,16 +56,16 @@ func HandleCreatePersonnel(createFn CreatePersonnelFunc) http.HandlerFunc {
 			role = "owner"
 		}
 
-		_, err = createFn(r.Context(), db.CreateUserParams{
-			Email:        email,
-			PasswordHash: hash,
-			Name:         name,
-			Role:         role,
-			PharmacyID:   pgtype.Int8{Int64: pharmacyID, Valid: true},
+		_, err = creator.CreatePersonnel(r.Context(), pharmacy.CreatePersonnelParams{
+			PharmacyID: pharmacyID,
+			Name:       name,
+			Email:      email,
+			Password:   password,
+			Role:       role,
 		})
 		if err != nil {
-			if isDuplicateEmail(err) {
-				AddPersonnelPage(pharmacyID, "L'email è già in uso.").Render(r.Context(), w)
+			if errors.Is(err, pharmacy.ErrDuplicateEmail) {
+				web.AddPersonnelPage(pharmacyID, "L'email è già in uso.").Render(r.Context(), w)
 				return
 			}
 			slog.Error("creating personnel user", "error", err)

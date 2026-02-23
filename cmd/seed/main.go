@@ -12,6 +12,7 @@ import (
 	"github.com/giorgiovilardo/pharmarecall/internal/auth"
 	"github.com/giorgiovilardo/pharmarecall/internal/config"
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/user"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -47,12 +48,14 @@ func run(configPath, email, password string) error {
 	defer pool.Close()
 
 	queries := db.New(pool)
+	userRepo := user.NewPgxRepository(queries)
+	userSvc := user.NewService(userRepo, auth.HashPassword, auth.VerifyPassword)
 
-	user, err := auth.SeedAdmin(ctx, queries, email, password)
+	u, err := userSvc.SeedAdmin(ctx, email, password)
 	if err != nil {
 		return fmt.Errorf("seeding admin: %w", err)
 	}
 
-	slog.Info("admin user created", "id", user.ID, "email", user.Email)
+	slog.Info("admin user created", "id", u.ID, "email", u.Email)
 	return nil
 }

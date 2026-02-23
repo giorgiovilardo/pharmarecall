@@ -20,14 +20,73 @@ Web application for Italian pharmacies to manage patients with recurring prescri
 
 ## Architecture
 
+**Hexagonal (Ports & Adapters)** — business logic is portable and decoupled from HTTP.
+
 - Server-rendered, no SPA, no JS framework
 - Single binary deployment — all assets (oat.ink CSS) and migrations embedded via `embed.FS`
-- Domain-driven project layout under `internal/`
 - Three roles: admin, pharmacy owner, pharmacy personnel
-- Closure-based handler DI: each handler is a `func(...deps) http.HandlerFunc` closing over its deps. No server struct. Interfaces live next to the handler that needs them.
-- `main.go` is the composition root: creates concrete deps (DB pool, session manager), constructs handlers, passes them to `NewRouter()`, composes middleware.
-- `NewRouter()` in `internal/web/routes.go` only does routing — it takes `http.HandlerFunc` values, knows nothing about interfaces or deps.
-- Handler tests: construct handlers directly with stubs, wrap in minimal middleware (e.g. `sm.LoadAndSave`), test via `httptest.NewServer`. Stubs and helpers live in test files.
+
+### Package Layout
+
+```
+cmd/server/main.go          — composition root: repos → services → handlers
+cmd/seed/main.go             — uses user.Service.SeedAdmin
+
+internal/
+  auth/                      — password hashing (bcrypt) + session manager setup
+  config/                    — koanf TOML config
+  db/                        — sqlc generated (DO NOT EDIT)
+
+  user/                      — DOMAIN: user/authentication business logic
+    user.go                  — domain types (User) + domain errors
+    port.go                  — driven ports: small single-purpose interfaces + Repository composite
+    service.go               — Service (Authenticate, ChangePassword, SeedAdmin)
+    service_test.go          — unit tests with tiny manual mocks per port
+    pgxrepo.go               — driven adapter: PgxRepository implements ports via pgx/sqlc
+
+  pharmacy/                  — DOMAIN: pharmacy business logic
+    pharmacy.go              — domain types + domain errors
+    port.go                  — driven ports: small single-purpose interfaces + Repository composite
+    service.go               — Service (CreateWithOwner, List, Get, Update, ListPersonnel, CreatePersonnel)
+    service_test.go          — unit tests with tiny manual mocks per port
+    pgxrepo.go               — driven adapter: PgxRepository implements ports via pgx/sqlc
+
+  web/                       — DRIVING ADAPTER: HTTP → domain
+    handler/                 — thin HTTP handlers (parse form → call domain → render)
+      login.go, logout.go, change_password.go, admin_dashboard.go, pharmacy.go, personnel.go
+    middleware.go            — LoadUser, RequireAuth, RequireAdmin + context helpers
+    routes.go                — NewRouter(Handlers struct) → *http.ServeMux
+    *.templ                  — templates (accept domain types directly)
+```
+
+### Hexagonal Mapping
+
+- **Driving ports**: public methods on `Service` (what handlers call)
+- **Driven ports**: small interfaces in `port.go` (what services need from persistence)
+- **Driving adapters**: `web/handler/` (HTTP → domain)
+- **Driven adapters**: `pgxrepo.go` files (domain → PostgreSQL via pgx/sqlc)
+
+### Key Patterns
+
+- **Closure-based handler DI**: each handler is a `func(...deps) http.HandlerFunc` closing over its deps. No server struct.
+- **Small port interfaces**: each port has 1 method, composed into `Repository` for wiring only
+- **`NewServiceWith(ServiceDeps{...})`**: test constructor — inject only what you need, rest stays nil
+- **`NewService(repo, ...)`**: production constructor — Repository satisfies all ports
+- **Domain types, not db types**: handlers and templates use `pharmacy.Pharmacy`, `user.User`, etc. The `db.*` types never leak outside `pgxrepo.go`.
+- **`service.go` has zero infrastructure imports**: no pgx, no db, no http
+- **Handler-side interfaces**: handlers define consumer-side interfaces (Go idiom) that domain services satisfy
+- `main.go` is the composition root: creates repos → services → handlers → router
+- `NewRouter()` in `internal/web/routes.go` takes a `Handlers` struct of `http.HandlerFunc` values, knows nothing about interfaces or deps
+- Handler tests: construct handlers directly with stubs, wrap in minimal middleware, test via `httptest.NewServer`
+- Domain service tests: mock individual port interfaces, not the full Repository
+
+### Where New Features Go
+
+1. **Domain types/errors** → `pharmacy.go` or `user.go` in the domain package
+2. **Business logic** → `service.go` method in the domain package (no HTTP, no db imports)
+3. **Persistence** → `pgxrepo.go` in the domain package (maps `db.*` ↔ domain types, owns transactions)
+4. **HTTP handling** → `web/handler/` (parse form → call service → render template)
+5. **Templates** → `web/*.templ` (accept domain types directly)
 
 ## Project Commands
 
@@ -68,10 +127,11 @@ Artifacts location: `openspec/changes/pharmarecall-mvp/`
 
 ## Code Style
 
-- **Interfaces near consumers**: declare interfaces where they are used, not where they are implemented
-- **Small interfaces**: prefer single-method interfaces
+- **Interfaces near consumers**: declare interfaces where they are used, not where they are implemented. Handler-side interfaces in `web/handler/`, driven port interfaces in domain `port.go`.
+- **Small interfaces**: prefer single-method interfaces. Compose into `Repository` only for wiring convenience.
 - **No shared interfaces by default**: only extract an interface to a common package if it's genuinely needed everywhere (e.g., a `Clock` interface wrapping `Now()`). Start with a local interface in the consumer package.
-- **Manual mocks in tests**: no mocking frameworks. Write simple structs that implement the interface in test files.
+- **Manual mocks in tests**: no mocking frameworks. Write simple structs that implement the interface in test files. Mock only the port you're testing (not all 6).
+- **Domain errors**: define sentinel errors in domain packages (`user.ErrInvalidCredentials`, `pharmacy.ErrNotFound`). Handlers check `errors.Is()` to map domain errors to HTTP responses.
 - **Error wrapping**: always wrap errors with context using `fmt.Errorf("doing something: %w", err)`. Never bare `return err`.
 - **Table-driven tests**: use table-driven tests as the default pattern, especially for calculation and validation logic.
 - **Structured logging**: use `log/slog` from stdlib. No `log.Println` or `fmt.Printf` for logging.
@@ -92,4 +152,4 @@ Artifacts location: `openspec/changes/pharmarecall-mvp/`
 - No PostgreSQL enums. Use basic data types (text/varchar) with CHECK constraints for constrained values (e.g., roles, statuses, fulfillment).
 - Pharmacy scoping: all patient/prescription/notification queries MUST filter by pharmacy_id
 - Order calculation is on-demand (no cron), based on consumption rate and box start date
-- All database writes MUST use a transaction
+- All database writes MUST use a transaction (handled in `pgxrepo.go` adapters)

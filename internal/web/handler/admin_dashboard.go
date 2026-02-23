@@ -1,27 +1,28 @@
-package web
+package handler
 
 import (
 	"context"
 	"log/slog"
 	"net/http"
 
-	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
+	"github.com/giorgiovilardo/pharmarecall/internal/web"
 )
 
 // PharmacyLister lists all pharmacies with personnel counts.
 type PharmacyLister interface {
-	ListPharmacies(ctx context.Context) ([]db.ListPharmaciesRow, error)
+	List(ctx context.Context) ([]pharmacy.Summary, error)
 }
 
 // HandleAdminDashboard renders the admin dashboard with the pharmacy list.
-func HandleAdminDashboard(pharmacies PharmacyLister) http.HandlerFunc {
+func HandleAdminDashboard(lister PharmacyLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		rows, err := pharmacies.ListPharmacies(r.Context())
+		rows, err := lister.List(r.Context())
 		if err != nil {
 			slog.Error("listing pharmacies", "error", err)
 			http.Error(w, "Errore interno.", http.StatusInternalServerError)
 			return
 		}
-		AdminDashboardPage(rows).Render(r.Context(), w)
+		web.AdminDashboardPage(rows).Render(r.Context(), w)
 	}
 }

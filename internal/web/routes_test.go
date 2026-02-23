@@ -9,22 +9,19 @@ import (
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
 )
 
-// newTestStack builds a full handler stack (router + sessions + CORS) for
-// integration-level route tests.
 func noopHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
 func newTestStack() http.Handler {
 	sm := scs.New()
-	stub := &stubUserGetter{}
-	mux := web.NewRouter(
-		web.HandleLoginPage(),
-		web.HandleLoginPost(sm, stub),
-		web.HandleLogout(sm),
-		web.HandleChangePasswordPage(),
-		web.HandleChangePasswordPost(sm, &stubPasswordChanger{}),
-		web.AdminHandlers{
+	mux := web.NewRouter(web.Handlers{
+		LoginPage:      noopHandler,
+		LoginPost:      noopHandler,
+		Logout:         noopHandler,
+		ChangePassPage: noopHandler,
+		ChangePassPost: noopHandler,
+		Admin: web.AdminHandlers{
 			Dashboard:       noopHandler,
 			NewPharmacy:     noopHandler,
 			CreatePharmacy:  noopHandler,
@@ -33,7 +30,7 @@ func newTestStack() http.Handler {
 			AddPersonnel:    noopHandler,
 			CreatePersonnel: noopHandler,
 		},
-	)
+	})
 	cop := http.NewCrossOriginProtection()
 	return cop.Handler(sm.LoadAndSave(web.LoadUser(sm)(mux)))
 }

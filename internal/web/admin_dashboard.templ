@@ -2,10 +2,10 @@ package web
 
 import (
 	"fmt"
-	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
 )
 
-templ AdminDashboardPage(pharmacies []db.ListPharmaciesRow) {
+templ AdminDashboardPage(pharmacies []pharmacy.Summary) {
 	@Layout("Farmacie") {
 		<div class="flex justify-between items-center mb-4">
 			<h1>Farmacie</h1>

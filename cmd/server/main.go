@@ -17,8 +17,10 @@ import (
 	"github.com/giorgiovilardo/pharmarecall/internal/auth"
 	"github.com/giorgiovilardo/pharmarecall/internal/config"
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
-	"github.com/giorgiovilardo/pharmarecall/internal/store"
+	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
+	"github.com/giorgiovilardo/pharmarecall/internal/user"
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
+	"github.com/giorgiovilardo/pharmarecall/internal/web/handler"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -59,31 +61,38 @@ func run() error {
 	queries := db.New(pool)
 	sm := auth.NewSessionManager(pool)
 
+	// Domain services
+	userRepo := user.NewPgxRepository(queries)
+	userSvc := user.NewService(userRepo, auth.HashPassword, auth.VerifyPassword)
+
+	pharmacyRepo := pharmacy.NewPgxRepository(pool, queries)
+	pharmacySvc := pharmacy.NewService(pharmacyRepo, auth.HashPassword)
+
 	// Build handlers
-	mux := web.NewRouter(
-		web.HandleLoginPage(),
-		web.HandleLoginPost(sm, queries),
-		web.HandleLogout(sm),
-		web.HandleChangePasswordPage(),
-		web.HandleChangePasswordPost(sm, queries),
-		web.AdminHandlers{
-			Dashboard:       web.HandleAdminDashboard(queries),
-			NewPharmacy:     web.HandleNewPharmacyPage(),
-			CreatePharmacy:  web.HandleCreatePharmacy(store.CreatePharmacyWithOwner(pool, queries)),
-			PharmacyDetail:  web.HandlePharmacyDetail(queries),
-			UpdatePharmacy:  web.HandleUpdatePharmacy(queries, store.UpdatePharmacy(pool, queries)),
-			AddPersonnel:    web.HandleAddPersonnelPage(),
-			CreatePersonnel: web.HandleCreatePersonnel(store.CreatePersonnel(pool, queries)),
+	mux := web.NewRouter(web.Handlers{
+		LoginPage:      handler.HandleLoginPage(),
+		LoginPost:      handler.HandleLoginPost(sm, userSvc),
+		Logout:         handler.HandleLogout(sm),
+		ChangePassPage: handler.HandleChangePasswordPage(),
+		ChangePassPost: handler.HandleChangePasswordPost(sm, userSvc),
+		Admin: web.AdminHandlers{
+			Dashboard:       handler.HandleAdminDashboard(pharmacySvc),
+			NewPharmacy:     handler.HandleNewPharmacyPage(),
+			CreatePharmacy:  handler.HandleCreatePharmacy(pharmacySvc),
+			PharmacyDetail:  handler.HandlePharmacyDetail(pharmacySvc, pharmacySvc),
+			UpdatePharmacy:  handler.HandleUpdatePharmacy(pharmacySvc, pharmacySvc, pharmacySvc),
+			AddPersonnel:    handler.HandleAddPersonnelPage(),
+			CreatePersonnel: handler.HandleCreatePersonnel(pharmacySvc),
 		},
-	)
+	})
 
 	// Compose middleware: CORS → sessions → load user → router
 	cop := http.NewCrossOriginProtection()
-	handler := cop.Handler(sm.LoadAndSave(web.LoadUser(sm)(mux)))
+	h := cop.Handler(sm.LoadAndSave(web.LoadUser(sm)(mux)))
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler: handler,
+		Handler: h,
 	}
 
 	go func() {

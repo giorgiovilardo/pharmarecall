@@ -10,10 +10,10 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
 )
 
-func PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string) templ.Component {
+func PharmacyDetailPage(p pharmacy.Pharmacy, personnel []pharmacy.PersonnelMember, errMsg string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -51,9 +51,9 @@ func PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(pharmacy.Name)
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 10, Col: 21}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 10, Col: 14}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -87,9 +87,9 @@ func PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 templ.SafeURL
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/pharmacies/%d", pharmacy.ID)))
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/pharmacies/%d", p.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 14, Col: 94}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 14, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -100,9 +100,9 @@ func PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(pharmacy.Name)
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 17, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 17, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -113,9 +113,9 @@ func PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(pharmacy.Address)
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(p.Address)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 21, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 21, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -126,9 +126,9 @@ func PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(pharmacy.Phone)
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(p.Phone)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 25, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 25, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -139,9 +139,9 @@ func PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(pharmacy.Email)
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(p.Email)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 29, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 29, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -152,9 +152,9 @@ func PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 templ.SafeURL
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/pharmacies/%d/personnel/new", pharmacy.ID)))
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/pharmacies/%d/personnel/new", p.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 36, Col: 90}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pharmacy_detail.templ`, Line: 36, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -230,7 +230,7 @@ func PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = Layout(pharmacy.Name).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Layout(p.Name).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
