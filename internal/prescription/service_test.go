@@ -125,6 +125,16 @@ func TestCreateValidation(t *testing.T) {
 			params: prescription.CreateParams{PatientID: 1, MedicationName: "X", UnitsPerBox: 30, DailyConsumption: 1},
 			errStr: "data",
 		},
+		{
+			name:   "consumption equals units (box lasts less than 1 day)",
+			params: prescription.CreateParams{PatientID: 1, MedicationName: "X", UnitsPerBox: 30, DailyConsumption: 30, BoxStartDate: date(2026, 1, 1)},
+			errStr: "consumo giornaliero deve essere inferiore",
+		},
+		{
+			name:   "consumption exceeds units",
+			params: prescription.CreateParams{PatientID: 1, MedicationName: "X", UnitsPerBox: 10, DailyConsumption: 50, BoxStartDate: date(2026, 1, 1)},
+			errStr: "consumo giornaliero deve essere inferiore",
+		},
 	}
 
 	for _, tt := range tests {
@@ -223,6 +233,11 @@ func TestUpdateValidation(t *testing.T) {
 			name:   "zero consumption",
 			params: prescription.UpdateParams{ID: 1, MedicationName: "X", UnitsPerBox: 30, BoxStartDate: date(2026, 1, 1)},
 			errStr: "consumo",
+		},
+		{
+			name:   "consumption exceeds units",
+			params: prescription.UpdateParams{ID: 1, MedicationName: "X", UnitsPerBox: 10, DailyConsumption: 20, BoxStartDate: date(2026, 1, 1)},
+			errStr: "consumo giornaliero deve essere inferiore",
 		},
 	}
 

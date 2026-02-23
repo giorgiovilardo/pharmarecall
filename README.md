@@ -8,6 +8,14 @@ Pharmacy personnel log in, register patients, record their recurring prescriptio
 
 Go 1.26, PostgreSQL 18, server-rendered HTML with [Templ](https://templ.guide) templates and [oat.ink](https://oat.ink/) CSS. Single binary deployment with embedded migrations and static assets.
 
+Key libraries: pgx/v5 (database driver), sqlc (query codegen), alexedwards/scs (sessions), goose (migrations), koanf (config), bcrypt (password hashing).
+
+## Architecture
+
+Hexagonal (ports & adapters). Business logic lives in domain packages with zero infrastructure imports. HTTP and database are adapters wired together in `cmd/server/main.go`.
+
+Three user roles: **admin** (manages pharmacies), **owner** (manages personnel), **personnel** (manages patients and prescriptions). All patient/prescription data is scoped to a pharmacy.
+
 ## Prerequisites
 
 - Go 1.26+
@@ -28,13 +36,13 @@ Copy the config template and adjust if needed:
 cp config.toml.dist config.toml
 ```
 
-Run migrations:
+Seed the admin user:
 
 ```
-just migrate up
+just seed
 ```
 
-Build and run:
+Build and run (migrations run automatically on startup):
 
 ```
 just build
@@ -65,6 +73,7 @@ just migrate up               # apply pending migrations
 just migrate down             # roll back one migration
 just migrate status           # show migration status
 just migrate_create <name>    # create a new migration file
+just seed                     # seed the admin user
 just build                    # build the binary
 just build-prod               # build a production binary (stripped, static)
 ```
@@ -72,15 +81,26 @@ just build-prod               # build a production binary (stripped, static)
 ## Project layout
 
 ```
-cmd/server/        entrypoint
+cmd/
+  server/              entrypoint, composition root
+  seed/                admin user seeding
 internal/
-  auth/            authentication, sessions
-  config/          configuration loading
-  web/             HTTP handlers, middleware, templates
+  auth/                password hashing, session manager setup
+  config/              koanf TOML config loading
+  db/                  sqlc generated code (do not edit)
+  user/                user domain: authentication, password management
+  pharmacy/            pharmacy domain: CRUD, personnel management
+  patient/             patient domain: CRUD, consensus tracking
+  prescription/        prescription domain: CRUD, depletion calculation, refills
+  web/
+    handler/           HTTP handlers (parse form -> call domain -> render)
+    *.templ            Templ templates (accept domain types directly)
+    middleware.go      auth, role-based access, context helpers
+    routes.go          route registration
 db/
-  migrations/      SQL migration files (goose)
-  queries/         SQL query files (sqlc)
-static/            static assets (embedded)
+  migrations/          SQL migration files (goose, sequential numbering)
+  queries/             SQL query files (sqlc)
+static/                static assets (oat.ink CSS, embedded via embed.FS)
 ```
 
 ## TODO

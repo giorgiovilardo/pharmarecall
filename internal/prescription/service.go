@@ -107,5 +107,8 @@ func validatePrescription(medicationName string, unitsPerBox int, dailyConsumpti
 	if boxStartDate.IsZero() {
 		return errors.New("la data di inizio confezione è obbligatoria")
 	}
+	if dailyConsumption >= float64(unitsPerBox) {
+		return errors.New("il consumo giornaliero deve essere inferiore alle unità per confezione (la confezione deve durare almeno un giorno)")
+	}
 	return nil
 }

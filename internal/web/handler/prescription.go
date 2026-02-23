@@ -118,6 +118,10 @@ func HandleCreatePrescription(creator PrescriptionCreator, patientGetter Patient
 			renderError("La data di inizio confezione è obbligatoria.")
 			return
 		}
+		if dailyConsumption >= float64(unitsPerBox) {
+			renderError("Il consumo giornaliero deve essere inferiore alle unità per confezione.")
+			return
+		}
 
 		_, err = creator.Create(r.Context(), prescription.CreateParams{
 			PatientID:        patientID,
@@ -246,6 +250,10 @@ func HandleUpdatePrescription(updater PrescriptionUpdater, prescriptionGetter Pr
 		}
 		if boxStartDate.IsZero() {
 			renderError("La data di inizio confezione è obbligatoria.")
+			return
+		}
+		if dailyConsumption >= float64(unitsPerBox) {
+			renderError("Il consumo giornaliero deve essere inferiore alle unità per confezione.")
 			return
 		}
 
