@@ -42,24 +42,65 @@ func (s *stubPatientCreator) Create(_ context.Context, p patient.CreateParams) (
 	return s.result, s.err
 }
 
+type stubPatientGetter struct {
+	id      int64
+	patient patient.Patient
+	err     error
+}
+
+func (s *stubPatientGetter) Get(_ context.Context, id int64) (patient.Patient, error) {
+	s.id = id
+	return s.patient, s.err
+}
+
+type stubPatientUpdater struct {
+	called bool
+	params patient.UpdateParams
+	err    error
+}
+
+func (s *stubPatientUpdater) Update(_ context.Context, p patient.UpdateParams) error {
+	s.called = true
+	s.params = p
+	return s.err
+}
+
 // --- Test server ---
 
+type patientTestDeps struct {
+	sm      *scs.SessionManager
+	lister  handler.PatientLister
+	creator handler.PatientCreator
+	getter  handler.PatientGetter
+	updater handler.PatientUpdater
+}
+
 func patientTestServer(sm *scs.SessionManager, lister handler.PatientLister, creator handler.PatientCreator) *httptest.Server {
+	return patientTestServerFull(patientTestDeps{sm: sm, lister: lister, creator: creator})
+}
+
+func patientTestServerFull(d patientTestDeps) *httptest.Server {
 	mux := http.NewServeMux()
-	if lister != nil {
-		mux.Handle("GET /patients", web.RequireAuth(http.HandlerFunc(handler.HandlePatientList(lister))))
+	if d.lister != nil {
+		mux.Handle("GET /patients", web.RequireAuth(http.HandlerFunc(handler.HandlePatientList(d.lister))))
 	}
 	mux.Handle("GET /patients/new", web.RequireAuth(http.HandlerFunc(handler.HandleNewPatientPage())))
-	if creator != nil {
-		mux.Handle("POST /patients", web.RequireAuth(http.HandlerFunc(handler.HandleCreatePatient(creator))))
+	if d.creator != nil {
+		mux.Handle("POST /patients", web.RequireAuth(http.HandlerFunc(handler.HandleCreatePatient(d.creator))))
+	}
+	if d.getter != nil {
+		mux.Handle("GET /patients/{id}", web.RequireAuth(http.HandlerFunc(handler.HandlePatientDetail(d.getter))))
+	}
+	if d.getter != nil && d.updater != nil {
+		mux.Handle("POST /patients/{id}", web.RequireAuth(http.HandlerFunc(handler.HandleUpdatePatient(d.getter, d.updater))))
 	}
 	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
-		sm.Put(r.Context(), "userID", int64(1))
-		sm.Put(r.Context(), "role", "personnel")
-		sm.Put(r.Context(), "pharmacyID", int64(7))
+		d.sm.Put(r.Context(), "userID", int64(1))
+		d.sm.Put(r.Context(), "role", "personnel")
+		d.sm.Put(r.Context(), "pharmacyID", int64(7))
 		w.WriteHeader(http.StatusOK)
 	})
-	return httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(mux)))
+	return httptest.NewServer(d.sm.LoadAndSave(web.LoadUser(d.sm)(mux)))
 }
 
 // --- Patient list tests (5.3) ---
@@ -295,5 +336,171 @@ func TestCreatePatientServiceErrorReturns500(t *testing.T) {
 
 	if resp.StatusCode != http.StatusInternalServerError {
 		t.Errorf("status = %d, want 500", resp.StatusCode)
+	}
+}
+
+// --- Patient detail tests (5.6) ---
+
+func TestPatientDetailRendersPatient(t *testing.T) {
+	getter := &stubPatientGetter{patient: patient.Patient{
+		ID: 10, PharmacyID: 7, FirstName: "Mario", LastName: "Rossi",
+		Phone: "333-1234567", Email: "mario@example.com",
+		DeliveryAddress: "Via Roma 1", Fulfillment: "pickup", Notes: "Nota test",
+	}}
+
+	sm := scs.New()
+	srv := patientTestServerFull(patientTestDeps{sm: sm, getter: getter})
+	defer srv.Close()
+
+	resp := authenticatedGet(t, srv, "/patients/10")
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", resp.StatusCode)
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	bodyStr := string(body)
+
+	for _, want := range []string{"Mario", "Rossi", "333-1234567", "mario@example.com", "Via Roma 1", "Nota test"} {
+		if !strings.Contains(bodyStr, want) {
+			t.Errorf("body missing %q", want)
+		}
+	}
+}
+
+func TestPatientDetailNotFoundReturns404(t *testing.T) {
+	getter := &stubPatientGetter{err: patient.ErrNotFound}
+
+	sm := scs.New()
+	srv := patientTestServerFull(patientTestDeps{sm: sm, getter: getter})
+	defer srv.Close()
+
+	resp := authenticatedGet(t, srv, "/patients/999")
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("status = %d, want 404", resp.StatusCode)
+	}
+}
+
+// --- Update patient handler tests (5.7) ---
+
+func TestUpdatePatientSuccessRedirects(t *testing.T) {
+	getter := &stubPatientGetter{patient: patient.Patient{ID: 10}}
+	updater := &stubPatientUpdater{}
+
+	sm := scs.New()
+	srv := patientTestServerFull(patientTestDeps{sm: sm, getter: getter, updater: updater})
+	defer srv.Close()
+
+	form := url.Values{
+		"first_name":  {"Mario"},
+		"last_name":   {"Bianchi"},
+		"phone":       {"333-9999999"},
+		"email":       {"mario@example.com"},
+		"fulfillment": {"pickup"},
+	}
+	resp := authenticatedPost(t, srv, "/patients/10", form)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Errorf("status = %d, want 303", resp.StatusCode)
+	}
+	if loc := resp.Header.Get("Location"); loc != "/patients/10" {
+		t.Errorf("redirect = %q, want /patients/10", loc)
+	}
+	if !updater.called {
+		t.Error("update was not called")
+	}
+	if updater.params.LastName != "Bianchi" {
+		t.Errorf("lastName = %q, want Bianchi", updater.params.LastName)
+	}
+}
+
+func TestUpdatePatientMissingNameShowsError(t *testing.T) {
+	getter := &stubPatientGetter{patient: patient.Patient{ID: 10, FirstName: "Mario", LastName: "Rossi"}}
+	updater := &stubPatientUpdater{}
+
+	sm := scs.New()
+	srv := patientTestServerFull(patientTestDeps{sm: sm, getter: getter, updater: updater})
+	defer srv.Close()
+
+	form := url.Values{
+		"first_name": {""},
+		"last_name":  {"Rossi"},
+		"phone":      {"333-1234567"},
+	}
+	resp := authenticatedPost(t, srv, "/patients/10", form)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
+	}
+	if updater.called {
+		t.Error("update should not have been called")
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "obbligatori") {
+		t.Error("body missing validation error message")
+	}
+}
+
+func TestUpdatePatientMissingContactShowsError(t *testing.T) {
+	getter := &stubPatientGetter{patient: patient.Patient{ID: 10, FirstName: "Mario", LastName: "Rossi"}}
+	updater := &stubPatientUpdater{}
+
+	sm := scs.New()
+	srv := patientTestServerFull(patientTestDeps{sm: sm, getter: getter, updater: updater})
+	defer srv.Close()
+
+	form := url.Values{
+		"first_name": {"Mario"},
+		"last_name":  {"Rossi"},
+	}
+	resp := authenticatedPost(t, srv, "/patients/10", form)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
+	}
+	if updater.called {
+		t.Error("update should not have been called")
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "contatto") {
+		t.Error("body missing contact validation error message")
+	}
+}
+
+func TestUpdatePatientShippingWithoutAddressShowsError(t *testing.T) {
+	getter := &stubPatientGetter{patient: patient.Patient{ID: 10, FirstName: "Mario", LastName: "Rossi"}}
+	updater := &stubPatientUpdater{}
+
+	sm := scs.New()
+	srv := patientTestServerFull(patientTestDeps{sm: sm, getter: getter, updater: updater})
+	defer srv.Close()
+
+	form := url.Values{
+		"first_name":  {"Mario"},
+		"last_name":   {"Rossi"},
+		"phone":       {"333-1234567"},
+		"fulfillment": {"shipping"},
+	}
+	resp := authenticatedPost(t, srv, "/patients/10", form)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want 200 (re-render with error)", resp.StatusCode)
+	}
+	if updater.called {
+		t.Error("update should not have been called")
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "indirizzo") {
+		t.Error("body missing address validation error message")
 	}
 }

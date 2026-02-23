@@ -1,0 +1,62 @@
+package web
+
+import (
+	"fmt"
+	"github.com/giorgiovilardo/pharmarecall/internal/patient"
+)
+
+templ PatientDetailPage(p patient.Patient, errMsg string) {
+	@Layout(p.FirstName + " " + p.LastName) {
+		<h1>{ p.FirstName } { p.LastName }</h1>
+		if !p.Consensus {
+			<div role="alert" data-variant="warning">
+				Consenso non registrato. Registra il consenso per attivare il paziente.
+			</div>
+			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/patients/%d/consensus", p.ID)) } class="mb-4">
+				<button type="submit">Registra consenso</button>
+			</form>
+		} else {
+			<p><span class="badge success">Consenso attivo</span></p>
+		}
+		if errMsg != "" {
+			<div role="alert" data-variant="danger">{ errMsg }</div>
+		}
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/patients/%d", p.ID)) }>
+			<label data-field>
+				Nome *
+				<input type="text" name="first_name" value={ p.FirstName } required/>
+			</label>
+			<label data-field>
+				Cognome *
+				<input type="text" name="last_name" value={ p.LastName } required/>
+			</label>
+			<label data-field>
+				Telefono
+				<input type="tel" name="phone" value={ p.Phone }/>
+			</label>
+			<label data-field>
+				Email
+				<input type="email" name="email" value={ p.Email }/>
+			</label>
+			<label data-field>
+				Indirizzo di consegna
+				<input type="text" name="delivery_address" value={ p.DeliveryAddress }/>
+			</label>
+			<label data-field>
+				Modalità di consegna
+				<select name="fulfillment">
+					<option value="pickup" selected?={ p.Fulfillment == "pickup" }>Ritiro in farmacia</option>
+					<option value="shipping" selected?={ p.Fulfillment == "shipping" }>Spedizione</option>
+				</select>
+			</label>
+			<label data-field>
+				Note
+				<textarea name="notes" rows="3">{ p.Notes }</textarea>
+			</label>
+			<div class="hstack gap-2 mt-4">
+				<button type="submit">Salva modifiche</button>
+				<a href="/patients" class="button outline">Torna ai pazienti</a>
+			</div>
+		</form>
+	}
+}
