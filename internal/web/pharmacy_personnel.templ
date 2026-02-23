@@ -1,0 +1,33 @@
+package web
+
+import "fmt"
+
+templ AddPersonnelPage(pharmacyID int64, errMsg string) {
+	@Layout("Nuovo Personale") {
+		<h1>Nuovo Personale</h1>
+		if errMsg != "" {
+			<div role="alert" data-variant="danger">{ errMsg }</div>
+		}
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/pharmacies/%d/personnel", pharmacyID)) }>
+			<label data-field>
+				Nome *
+				<input type="text" name="name" required/>
+			</label>
+			<label data-field>
+				Email *
+				<input type="email" name="email" required/>
+			</label>
+			<label data-field>
+				Password temporanea *
+				<input type="password" name="password" required/>
+			</label>
+			<label data-field>
+				<input type="checkbox" name="owner" value="true"/> Titolare
+			</label>
+			<div class="hstack gap-2 mt-4">
+				<button type="submit">Crea personale</button>
+				<a href={ templ.SafeURL(fmt.Sprintf("/admin/pharmacies/%d", pharmacyID)) } class="button outline">Annulla</a>
+			</div>
+		</form>
+	}
+}

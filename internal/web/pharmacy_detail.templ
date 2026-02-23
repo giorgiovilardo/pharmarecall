@@ -1,0 +1,62 @@
+package web
+
+import (
+	"fmt"
+	"github.com/giorgiovilardo/pharmarecall/internal/db"
+)
+
+templ PharmacyDetailPage(pharmacy db.Pharmacy, personnel []db.User, errMsg string) {
+	@Layout(pharmacy.Name) {
+		<h1>{ pharmacy.Name }</h1>
+		if errMsg != "" {
+			<div role="alert" data-variant="danger">{ errMsg }</div>
+		}
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/pharmacies/%d", pharmacy.ID)) }>
+			<label data-field>
+				Nome *
+				<input type="text" name="name" value={ pharmacy.Name } required/>
+			</label>
+			<label data-field>
+				Indirizzo *
+				<input type="text" name="address" value={ pharmacy.Address } required/>
+			</label>
+			<label data-field>
+				Telefono
+				<input type="tel" name="phone" value={ pharmacy.Phone }/>
+			</label>
+			<label data-field>
+				Email
+				<input type="email" name="email" value={ pharmacy.Email }/>
+			</label>
+			<button type="submit">Salva modifiche</button>
+		</form>
+		<hr class="mt-6 mb-4"/>
+		<div class="flex justify-between items-center mb-4">
+			<h2>Personale</h2>
+			<a href={ templ.SafeURL(fmt.Sprintf("/admin/pharmacies/%d/personnel/new", pharmacy.ID)) } class="button small">Aggiungi</a>
+		</div>
+		if len(personnel) == 0 {
+			<p>Nessun personale.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Nome</th>
+						<th>Email</th>
+						<th>Ruolo</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, u := range personnel {
+						<tr>
+							<td>{ u.Name }</td>
+							<td>{ u.Email }</td>
+							<td>{ u.Role }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+		<a href="/admin" class="button outline mt-4">Torna alle farmacie</a>
+	}
+}

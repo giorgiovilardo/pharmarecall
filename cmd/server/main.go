@@ -17,6 +17,7 @@ import (
 	"github.com/giorgiovilardo/pharmarecall/internal/auth"
 	"github.com/giorgiovilardo/pharmarecall/internal/config"
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/store"
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -65,6 +66,15 @@ func run() error {
 		web.HandleLogout(sm),
 		web.HandleChangePasswordPage(),
 		web.HandleChangePasswordPost(sm, queries),
+		web.AdminHandlers{
+			Dashboard:       web.HandleAdminDashboard(queries),
+			NewPharmacy:     web.HandleNewPharmacyPage(),
+			CreatePharmacy:  web.HandleCreatePharmacy(store.CreatePharmacyWithOwner(pool, queries)),
+			PharmacyDetail:  web.HandlePharmacyDetail(queries),
+			UpdatePharmacy:  web.HandleUpdatePharmacy(queries, store.UpdatePharmacy(pool, queries)),
+			AddPersonnel:    web.HandleAddPersonnelPage(),
+			CreatePersonnel: web.HandleCreatePersonnel(store.CreatePersonnel(pool, queries)),
+		},
 	)
 
 	// Compose middleware: CORS → sessions → load user → router

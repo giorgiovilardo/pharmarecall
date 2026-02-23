@@ -1,0 +1,41 @@
+package web
+
+import (
+	"fmt"
+	"github.com/giorgiovilardo/pharmarecall/internal/db"
+)
+
+templ AdminDashboardPage(pharmacies []db.ListPharmaciesRow) {
+	@Layout("Farmacie") {
+		<div class="flex justify-between items-center mb-4">
+			<h1>Farmacie</h1>
+			<a href="/admin/pharmacies/new" class="button">Nuova farmacia</a>
+		</div>
+		if len(pharmacies) == 0 {
+			<p>Nessuna farmacia registrata.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Nome</th>
+						<th>Indirizzo</th>
+						<th>Personale</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, p := range pharmacies {
+						<tr>
+							<td>{ p.Name }</td>
+							<td>{ p.Address }</td>
+							<td>{ fmt.Sprintf("%d", p.PersonnelCount) }</td>
+							<td>
+								<a href={ templ.SafeURL(fmt.Sprintf("/admin/pharmacies/%d", p.ID)) } class="button small outline">Dettagli</a>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	}
+}

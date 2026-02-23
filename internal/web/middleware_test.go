@@ -90,6 +90,100 @@ func TestLoadUserSetsContextForAuthenticatedUser(t *testing.T) {
 	}
 }
 
+func TestRequireAdminAllowsAdminRole(t *testing.T) {
+	sm := scs.New()
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	mux := http.NewServeMux()
+	mux.Handle("GET /admin-only", web.RequireAdmin(handler))
+	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
+		sm.Put(r.Context(), "userID", int64(1))
+		sm.Put(r.Context(), "role", "admin")
+		w.WriteHeader(http.StatusOK)
+	})
+
+	srv := httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(mux)))
+	defer srv.Close()
+
+	client := noFollowClient()
+	setupResp, err := client.Get(srv.URL + "/setup-session")
+	if err != nil {
+		t.Fatalf("setting up session: %v", err)
+	}
+	setupResp.Body.Close()
+
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/admin-only", nil)
+	for _, c := range setupResp.Cookies() {
+		req.AddCookie(c)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("requesting admin page: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want 200", resp.StatusCode)
+	}
+}
+
+func TestRequireAdminDeniesNonAdminRoles(t *testing.T) {
+	tests := []struct {
+		name string
+		role string
+	}{
+		{"owner denied", "owner"},
+		{"personnel denied", "personnel"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sm := scs.New()
+
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+
+			mux := http.NewServeMux()
+			mux.Handle("GET /admin-only", web.RequireAdmin(handler))
+			mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
+				sm.Put(r.Context(), "userID", int64(1))
+				sm.Put(r.Context(), "role", tt.role)
+				w.WriteHeader(http.StatusOK)
+			})
+
+			srv := httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(mux)))
+			defer srv.Close()
+
+			client := noFollowClient()
+			setupResp, err := client.Get(srv.URL + "/setup-session")
+			if err != nil {
+				t.Fatalf("setting up session: %v", err)
+			}
+			setupResp.Body.Close()
+
+			req, _ := http.NewRequest(http.MethodGet, srv.URL+"/admin-only", nil)
+			for _, c := range setupResp.Cookies() {
+				req.AddCookie(c)
+			}
+
+			resp, err := client.Do(req)
+			if err != nil {
+				t.Fatalf("requesting admin page: %v", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusForbidden {
+				t.Errorf("status = %d, want 403", resp.StatusCode)
+			}
+		})
+	}
+}
+
 func TestLoadUserPassesThroughForUnauthenticated(t *testing.T) {
 	sm := scs.New()
 

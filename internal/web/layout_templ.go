@@ -42,17 +42,17 @@ func Layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " - PharmaRecall</title><link rel=\"stylesheet\" href=\"https://unpkg.com/@knadh/oat/oat.min.css\"><link rel=\"stylesheet\" href=\"/static/custom.css\"></head><body><nav data-topnav class=\"flex justify-between items-center\"><strong>PharmaRecall</strong> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " - PharmaRecall</title><link rel=\"stylesheet\" href=\"https://unpkg.com/@knadh/oat/oat.min.css\"><link rel=\"stylesheet\" href=\"/static/custom.css\"></head><body><nav data-topnav class=\"justify-between\"><strong>PharmaRecall</strong> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if UserID(ctx) != 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"POST\" action=\"/logout\"><button class=\"small outline\" type=\"submit\">Esci</button></form>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form method=\"POST\" action=\"/logout\" style=\"margin: 0;\"><button class=\"small outline\" type=\"submit\">Esci</button></form>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</nav><main style=\"padding: var(--space-4);\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</nav><main class=\"container\" style=\"padding-block: var(--space-4);\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

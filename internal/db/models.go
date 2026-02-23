@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Pharmacy struct {
+	ID        int64
+	Name      string
+	Address   string
+	Phone     string
+	Email     string
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+}
+
 type Session struct {
 	Token  string
 	Data   []byte

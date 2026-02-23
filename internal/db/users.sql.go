@@ -91,6 +91,42 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 	return i, err
 }
 
+const listUsersByPharmacy = `-- name: ListUsersByPharmacy :many
+SELECT id, email, password_hash, name, role, pharmacy_id, created_at, updated_at
+FROM users
+WHERE pharmacy_id = $1::BIGINT
+ORDER BY name
+`
+
+func (q *Queries) ListUsersByPharmacy(ctx context.Context, pharmacyID int64) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsersByPharmacy, pharmacyID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.PasswordHash,
+			&i.Name,
+			&i.Role,
+			&i.PharmacyID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateUserPassword = `-- name: UpdateUserPassword :exec
 UPDATE users
 SET password_hash = $2, updated_at = now()

@@ -79,7 +79,7 @@ func TestLoginPostValidCredentialsRedirects(t *testing.T) {
 	users := &stubUserGetter{
 		user: db.User{
 			ID:           1,
-			Email:        "admin@test.com",
+			Email:        "admin@example.com",
 			PasswordHash: hash,
 			Name:         "Admin",
 			Role:         "admin",
@@ -90,7 +90,7 @@ func TestLoginPostValidCredentialsRedirects(t *testing.T) {
 	srv := loginTestServer(sm, users)
 	defer srv.Close()
 
-	form := url.Values{"email": {"admin@test.com"}, "password": {"secret123"}}
+	form := url.Values{"email": {"admin@example.com"}, "password": {"secret123"}}
 	resp, err := noFollowClient().Post(srv.URL+"/login", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
 	if err != nil {
 		t.Fatalf("posting login: %v", err)
@@ -114,7 +114,7 @@ func TestLoginPostInvalidPasswordShowsError(t *testing.T) {
 	users := &stubUserGetter{
 		user: db.User{
 			ID:           1,
-			Email:        "user@test.com",
+			Email:        "user@example.com",
 			PasswordHash: hash,
 			Role:         "personnel",
 		},
@@ -124,7 +124,7 @@ func TestLoginPostInvalidPasswordShowsError(t *testing.T) {
 	srv := loginTestServer(sm, users)
 	defer srv.Close()
 
-	form := url.Values{"email": {"user@test.com"}, "password": {"wrong-password"}}
+	form := url.Values{"email": {"user@example.com"}, "password": {"wrong-password"}}
 	resp, err := noFollowClient().Post(srv.URL+"/login", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
 	if err != nil {
 		t.Fatalf("posting login: %v", err)
@@ -143,7 +143,7 @@ func TestLoginPostUnknownEmailShowsError(t *testing.T) {
 	srv := loginTestServer(sm, users)
 	defer srv.Close()
 
-	form := url.Values{"email": {"nobody@test.com"}, "password": {"whatever"}}
+	form := url.Values{"email": {"nobody@example.com"}, "password": {"whatever"}}
 	resp, err := noFollowClient().Post(srv.URL+"/login", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
 	if err != nil {
 		t.Fatalf("posting login: %v", err)
@@ -171,14 +171,14 @@ func TestLoginPostRedirectsByRole(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			users := &emailMatchingUserGetter{users: map[string]db.User{
-				"user@test.com": {ID: 1, Email: "user@test.com", PasswordHash: hash, Role: tt.role},
+				"user@example.com": {ID: 1, Email: "user@example.com", PasswordHash: hash, Role: tt.role},
 			}}
 
 			sm := scs.New()
 			srv := loginTestServer(sm, users)
 			defer srv.Close()
 
-			form := url.Values{"email": {"user@test.com"}, "password": {"pass"}}
+			form := url.Values{"email": {"user@example.com"}, "password": {"pass"}}
 			resp, err := noFollowClient().Post(srv.URL+"/login", "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
 			if err != nil {
 				t.Fatalf("posting login: %v", err)

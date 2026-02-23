@@ -48,6 +48,18 @@ func RequireAuth(next http.Handler) http.Handler {
 	})
 }
 
+// RequireAdmin returns 403 Forbidden if the authenticated user is not an admin.
+// Must be used after LoadUser and RequireAuth.
+func RequireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if Role(r.Context()) != "admin" {
+			http.Error(w, "Accesso negato.", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // UserID returns the authenticated user's ID from the request context.
 func UserID(ctx context.Context) int64 {
 	id, _ := ctx.Value(ctxKeyUserID).(int64)

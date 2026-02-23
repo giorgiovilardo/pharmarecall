@@ -28,19 +28,19 @@
 
 ## 3. Admin Creates Pharmacy with Owner
 
-- [ ] 3.1 Migration: create `pharmacies` table (id, name, address, phone, email, created_at, updated_at)
-- [ ] 3.2 Write sqlc queries for pharmacies: CreatePharmacy, ListPharmacies (with personnel/patient counts), GetPharmacyByID, UpdatePharmacy
-- [ ] 3.3 Write sqlc queries for users: CreateUser, ListUsersByPharmacy, UpdateUserPassword
-- [ ] 3.4 Implement role-based middleware: require admin role
-- [ ] 3.5 Create admin dashboard page listing all pharmacies (name, address, personnel count, patient count)
-- [ ] 3.6 Create pharmacy creation form: pharmacy details + owner name, email, temporary password
-- [ ] 3.7 Implement pharmacy creation handler: validate, create pharmacy + owner user in a transaction, redirect to admin dashboard
-- [ ] 3.8 Create pharmacy detail/edit page for admin with edit form
-- [ ] 3.9 Implement pharmacy update handler
-- [ ] 3.10 Create admin view of pharmacy personnel on pharmacy detail page
-- [ ] 3.11 Create add-personnel-to-pharmacy form for admin (name, email, temporary password)
-- [ ] 3.12 Implement admin add-personnel handler: create user scoped to the selected pharmacy
-- [ ] 3.13 Verify end-to-end: admin logs in, sees pharmacy list, creates pharmacy with owner, edits pharmacy, adds personnel, owner and personnel can log in
+- [x] 3.1 Migration: create `pharmacies` table (id, name, address, phone, email, created_at, updated_at)
+- [x] 3.2 Write sqlc queries for pharmacies: CreatePharmacy, ListPharmacies (with personnel/patient counts), GetPharmacyByID, UpdatePharmacy
+- [x] 3.3 Write sqlc queries for users: CreateUser, ListUsersByPharmacy, UpdateUserPassword
+- [x] 3.4 Implement role-based middleware: require admin role
+- [x] 3.5 Create admin dashboard page listing all pharmacies (name, address, personnel count, patient count)
+- [x] 3.6 Create pharmacy creation form: pharmacy details + owner name, email, temporary password
+- [x] 3.7 Implement pharmacy creation handler: validate, create pharmacy + owner user in a transaction, redirect to admin dashboard
+- [x] 3.8 Create pharmacy detail/edit page for admin with edit form
+- [x] 3.9 Implement pharmacy update handler
+- [x] 3.10 Create admin view of pharmacy personnel on pharmacy detail page
+- [x] 3.11 Create add-personnel-to-pharmacy form for admin (name, email, temporary password)
+- [x] 3.12 Implement admin add-personnel handler: create user scoped to the selected pharmacy
+- [x] 3.13 Verify end-to-end: admin logs in, sees pharmacy list, creates pharmacy with owner, edits pharmacy, adds personnel, owner and personnel can log in
 
 ## 4. Owner Manages Personnel
 

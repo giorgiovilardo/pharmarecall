@@ -1,0 +1,50 @@
+package web
+
+templ NewPharmacyPage(errMsg string) {
+	@Layout("Nuova Farmacia") {
+		<h1>Nuova Farmacia</h1>
+		if errMsg != "" {
+			<div role="alert" data-variant="danger">{ errMsg }</div>
+		}
+		<form method="POST" action="/admin/pharmacies">
+			<fieldset>
+				<legend>Farmacia</legend>
+				<label data-field>
+					Nome *
+					<input type="text" name="pharmacy_name" required/>
+				</label>
+				<label data-field>
+					Indirizzo *
+					<input type="text" name="address" required/>
+				</label>
+				<label data-field>
+					Telefono
+					<input type="tel" name="phone"/>
+				</label>
+				<label data-field>
+					Email
+					<input type="email" name="email"/>
+				</label>
+			</fieldset>
+			<fieldset class="mt-4">
+				<legend>Titolare</legend>
+				<label data-field>
+					Nome *
+					<input type="text" name="owner_name" required/>
+				</label>
+				<label data-field>
+					Email *
+					<input type="email" name="owner_email" required/>
+				</label>
+				<label data-field>
+					Password temporanea *
+					<input type="password" name="owner_password" required/>
+				</label>
+			</fieldset>
+			<div class="hstack gap-2 mt-4">
+				<button type="submit">Crea farmacia</button>
+				<a href="/admin" class="button outline">Annulla</a>
+			</div>
+		</form>
+	}
+}

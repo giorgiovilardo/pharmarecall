@@ -11,6 +11,10 @@ import (
 
 // newTestStack builds a full handler stack (router + sessions + CORS) for
 // integration-level route tests.
+func noopHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
 func newTestStack() http.Handler {
 	sm := scs.New()
 	stub := &stubUserGetter{}
@@ -20,6 +24,15 @@ func newTestStack() http.Handler {
 		web.HandleLogout(sm),
 		web.HandleChangePasswordPage(),
 		web.HandleChangePasswordPost(sm, &stubPasswordChanger{}),
+		web.AdminHandlers{
+			Dashboard:       noopHandler,
+			NewPharmacy:     noopHandler,
+			CreatePharmacy:  noopHandler,
+			PharmacyDetail:  noopHandler,
+			UpdatePharmacy:  noopHandler,
+			AddPersonnel:    noopHandler,
+			CreatePersonnel: noopHandler,
+		},
 	)
 	cop := http.NewCrossOriginProtection()
 	return cop.Handler(sm.LoadAndSave(web.LoadUser(sm)(mux)))
