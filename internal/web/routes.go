@@ -19,7 +19,9 @@ type AdminHandlers struct {
 
 // OwnerHandlers groups all owner-only handler funcs.
 type OwnerHandlers struct {
-	PersonnelList http.HandlerFunc
+	PersonnelList   http.HandlerFunc
+	AddPersonnel    http.HandlerFunc
+	CreatePersonnel http.HandlerFunc
 }
 
 // Handlers groups all handler funcs for routing.
@@ -59,6 +61,8 @@ func NewRouter(h Handlers) *http.ServeMux {
 
 	// Owner routes — RequireOwner middleware applied per-handler
 	mux.Handle("GET /personnel", RequireOwner(http.HandlerFunc(h.Owner.PersonnelList)))
+	mux.Handle("GET /personnel/new", RequireOwner(http.HandlerFunc(h.Owner.AddPersonnel)))
+	mux.Handle("POST /personnel", RequireOwner(http.HandlerFunc(h.Owner.CreatePersonnel)))
 
 	return mux
 }

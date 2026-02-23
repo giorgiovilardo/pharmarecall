@@ -1,0 +1,28 @@
+package web
+
+templ OwnerAddPersonnelPage(errMsg string) {
+	@Layout("Nuovo Personale") {
+		<h1>Nuovo Personale</h1>
+		if errMsg != "" {
+			<div role="alert" data-variant="danger">{ errMsg }</div>
+		}
+		<form method="POST" action="/personnel">
+			<label data-field>
+				Nome *
+				<input type="text" name="name" required/>
+			</label>
+			<label data-field>
+				Email *
+				<input type="email" name="email" required/>
+			</label>
+			<label data-field>
+				Password temporanea *
+				<input type="password" name="password" required/>
+			</label>
+			<div class="hstack gap-2 mt-4">
+				<button type="submit">Crea personale</button>
+				<a href="/personnel" class="button outline">Annulla</a>
+			</div>
+		</form>
+	}
+}
