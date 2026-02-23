@@ -32,6 +32,11 @@ type PatientUpdater interface {
 	Update(ctx context.Context, p patient.UpdateParams) error
 }
 
+// PatientConsensusRecorder records patient consensus.
+type PatientConsensusRecorder interface {
+	SetConsensus(ctx context.Context, id int64) error
+}
+
 // HandlePatientList renders the patient list page.
 func HandlePatientList(lister PatientLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -184,6 +189,25 @@ func HandleUpdatePatient(getter PatientGetter, updater PatientUpdater) http.Hand
 			Notes:           notes,
 		}); err != nil {
 			slog.Error("updating patient", "error", err)
+			http.Error(w, "Errore interno.", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, fmt.Sprintf("/patients/%d", id), http.StatusSeeOther)
+	}
+}
+
+// HandleSetConsensus records that a patient has given consensus.
+func HandleSetConsensus(recorder PatientConsensusRecorder) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		if err := recorder.SetConsensus(r.Context(), id); err != nil {
+			slog.Error("setting consensus", "error", err)
 			http.Error(w, "Errore interno.", http.StatusInternalServerError)
 			return
 		}

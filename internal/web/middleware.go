@@ -63,6 +63,19 @@ func RequireAdmin(next http.Handler) http.Handler {
 	})
 }
 
+// RequirePharmacyStaff returns 403 Forbidden if the authenticated user has no
+// pharmacy association (i.e., is not an owner or personnel).
+// Must be used after LoadUser and RequireAuth.
+func RequirePharmacyStaff(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if PharmacyID(r.Context()) == 0 {
+			http.Error(w, "Accesso negato.", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // RequireOwner returns 403 Forbidden if the authenticated user is not an owner.
 // Must be used after LoadUser and RequireAuth.
 func RequireOwner(next http.Handler) http.Handler {

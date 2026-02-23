@@ -59,8 +59,8 @@
 - [x] 5.5 Implement patient creation handler with validation (require name + at least one contact, shipping requires address)
 - [x] 5.6 Create patient detail/edit page with edit form
 - [x] 5.7 Implement patient update handler with validation
-- [ ] 5.8 Implement consensus recording on patient detail page: button to mark active with current date
-- [ ] 5.9 Add pharmacy scoping to all patient queries (filter by logged-in user's pharmacy_id)
+- [x] 5.8 Implement consensus recording on patient detail page: button to mark active with current date
+- [x] 5.9 Add pharmacy scoping to all patient queries (filter by logged-in user's pharmacy_id)
 - [ ] 5.10 Verify end-to-end: personnel logs in, creates patient, records consensus, edits patient, sees patient list
 
 ## 6. Recurring Prescriptions & Refills

@@ -65,14 +65,27 @@ func (s *stubPatientUpdater) Update(_ context.Context, p patient.UpdateParams) e
 	return s.err
 }
 
+type stubConsensusRecorder struct {
+	called bool
+	id     int64
+	err    error
+}
+
+func (s *stubConsensusRecorder) SetConsensus(_ context.Context, id int64) error {
+	s.called = true
+	s.id = id
+	return s.err
+}
+
 // --- Test server ---
 
 type patientTestDeps struct {
-	sm      *scs.SessionManager
-	lister  handler.PatientLister
-	creator handler.PatientCreator
-	getter  handler.PatientGetter
-	updater handler.PatientUpdater
+	sm        *scs.SessionManager
+	lister    handler.PatientLister
+	creator   handler.PatientCreator
+	getter    handler.PatientGetter
+	updater   handler.PatientUpdater
+	consensus handler.PatientConsensusRecorder
 }
 
 func patientTestServer(sm *scs.SessionManager, lister handler.PatientLister, creator handler.PatientCreator) *httptest.Server {
@@ -93,6 +106,9 @@ func patientTestServerFull(d patientTestDeps) *httptest.Server {
 	}
 	if d.getter != nil && d.updater != nil {
 		mux.Handle("POST /patients/{id}", web.RequireAuth(http.HandlerFunc(handler.HandleUpdatePatient(d.getter, d.updater))))
+	}
+	if d.consensus != nil {
+		mux.Handle("POST /patients/{id}/consensus", web.RequireAuth(http.HandlerFunc(handler.HandleSetConsensus(d.consensus))))
 	}
 	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
 		d.sm.Put(r.Context(), "userID", int64(1))
@@ -502,5 +518,46 @@ func TestUpdatePatientShippingWithoutAddressShowsError(t *testing.T) {
 	body, _ := io.ReadAll(resp.Body)
 	if !strings.Contains(string(body), "indirizzo") {
 		t.Error("body missing address validation error message")
+	}
+}
+
+// --- Consensus recording tests (5.8) ---
+
+func TestSetConsensusSuccessRedirects(t *testing.T) {
+	recorder := &stubConsensusRecorder{}
+
+	sm := scs.New()
+	srv := patientTestServerFull(patientTestDeps{sm: sm, consensus: recorder})
+	defer srv.Close()
+
+	resp := authenticatedPost(t, srv, "/patients/10/consensus", url.Values{})
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Errorf("status = %d, want 303", resp.StatusCode)
+	}
+	if loc := resp.Header.Get("Location"); loc != "/patients/10" {
+		t.Errorf("redirect = %q, want /patients/10", loc)
+	}
+	if !recorder.called {
+		t.Error("SetConsensus was not called")
+	}
+	if recorder.id != 10 {
+		t.Errorf("id = %d, want 10", recorder.id)
+	}
+}
+
+func TestSetConsensusErrorReturns500(t *testing.T) {
+	recorder := &stubConsensusRecorder{err: errors.New("db down")}
+
+	sm := scs.New()
+	srv := patientTestServerFull(patientTestDeps{sm: sm, consensus: recorder})
+	defer srv.Close()
+
+	resp := authenticatedPost(t, srv, "/patients/10/consensus", url.Values{})
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("status = %d, want 500", resp.StatusCode)
 	}
 }
