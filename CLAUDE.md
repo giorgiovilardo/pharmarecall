@@ -121,9 +121,10 @@ All tests MUST use the `_test` package suffix (e.g., `package auth_test` not `pa
 
 ## OpenSpec
 
-Active change: `pharmarecall-mvp` — all artifacts complete (proposal, design, specs, tasks). Resume implementation with `/opsx:apply`.
+No active changes. Start a new one with `/opsx:new`.
 
-Artifacts location: `openspec/changes/pharmarecall-mvp/`
+Main specs: `openspec/specs/` (7 capabilities)
+Archive: `openspec/changes/archive/2026-02-23-pharmarecall-mvp/`
 
 ## Code Style
 
