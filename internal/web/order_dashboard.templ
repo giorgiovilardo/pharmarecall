@@ -41,18 +41,9 @@ func advanceButtonText(status string) string {
 	}
 }
 
-templ OrderDashboardPage(entries []order.DashboardEntry, now time.Time, role string, rxStatus string, orderStatus string, dateFrom string, dateTo string) {
+templ OrderDashboardPage(entries []order.DashboardEntry, now time.Time, rxStatus string, orderStatus string, dateFrom string, dateTo string) {
 	@Layout("Dashboard Ordini") {
 		<h1>Dashboard Ordini</h1>
-		<nav class="mb-4">
-			<ul class="unstyled hstack gap-4">
-				<li><a href="/patients">Pazienti</a></li>
-				if role == "owner" {
-					<li><a href="/personnel">Personale</a></li>
-				}
-				<li><a href="/change-password">Cambia password</a></li>
-			</ul>
-		</nav>
 		<form method="GET" action="/dashboard" class="mb-4">
 			<div class="hstack gap-2" style="flex-wrap: wrap; align-items: flex-end;">
 				<div data-field style="margin-bottom: 0;">

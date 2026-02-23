@@ -10,9 +10,11 @@ import (
 type contextKey string
 
 const (
-	ctxKeyUserID     contextKey = "userID"
-	ctxKeyRole       contextKey = "role"
-	ctxKeyPharmacyID contextKey = "pharmacyID"
+	ctxKeyUserID       contextKey = "userID"
+	ctxKeyRole         contextKey = "role"
+	ctxKeyPharmacyID   contextKey = "pharmacyID"
+	ctxKeyUserName     contextKey = "userName"
+	ctxKeyPharmacyName contextKey = "pharmacyName"
 )
 
 // LoadUser reads userID and role from the session and attaches them to
@@ -29,10 +31,14 @@ func LoadUser(sessions *scs.SessionManager) func(http.Handler) http.Handler {
 
 			role := sessions.GetString(r.Context(), "role")
 			pharmacyID := sessions.GetInt64(r.Context(), "pharmacyID")
+			userName := sessions.GetString(r.Context(), "userName")
+			pharmacyName := sessions.GetString(r.Context(), "pharmacyName")
 
 			ctx := context.WithValue(r.Context(), ctxKeyUserID, userID)
 			ctx = context.WithValue(ctx, ctxKeyRole, role)
 			ctx = context.WithValue(ctx, ctxKeyPharmacyID, pharmacyID)
+			ctx = context.WithValue(ctx, ctxKeyUserName, userName)
+			ctx = context.WithValue(ctx, ctxKeyPharmacyName, pharmacyName)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -104,4 +110,16 @@ func Role(ctx context.Context) string {
 func PharmacyID(ctx context.Context) int64 {
 	id, _ := ctx.Value(ctxKeyPharmacyID).(int64)
 	return id
+}
+
+// UserName returns the authenticated user's display name from the request context.
+func UserName(ctx context.Context) string {
+	name, _ := ctx.Value(ctxKeyUserName).(string)
+	return name
+}
+
+// PharmacyName returns the authenticated user's pharmacy name from the request context.
+func PharmacyName(ctx context.Context) string {
+	name, _ := ctx.Value(ctxKeyPharmacyName).(string)
+	return name
 }

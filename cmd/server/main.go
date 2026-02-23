@@ -83,7 +83,7 @@ func run() error {
 	// Build handlers
 	mux := web.NewRouter(web.Handlers{
 		LoginPage:      handler.HandleLoginPage(),
-		LoginPost:      handler.HandleLoginPost(sm, userSvc),
+		LoginPost:      handler.HandleLoginPost(sm, userSvc, pharmacySvc),
 		Logout:         handler.HandleLogout(sm),
 		ChangePassPage: handler.HandleChangePasswordPage(),
 		ChangePassPost: handler.HandleChangePasswordPost(sm, userSvc),

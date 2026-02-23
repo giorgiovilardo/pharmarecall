@@ -62,7 +62,7 @@ func HandleDashboard(ensurer OrderEnsurer, lister DashboardLister, lookaheadDays
 
 		filtered := applyDashboardFilters(entries, filters, now)
 
-		web.OrderDashboardPage(filtered, now, web.Role(r.Context()), filters.PrescriptionStatus, filters.OrderStatus, filters.DateFrom, filters.DateTo).Render(r.Context(), w)
+		web.OrderDashboardPage(filtered, now, filters.PrescriptionStatus, filters.OrderStatus, filters.DateFrom, filters.DateTo).Render(r.Context(), w)
 	}
 }
 

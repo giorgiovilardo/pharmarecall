@@ -11,12 +11,35 @@ templ Layout(title string) {
 			<link rel="stylesheet" href="/static/custom.css"/>
 		</head>
 		<body>
-			<nav data-topnav class="justify-between">
+			<nav data-topnav>
 				<strong>PharmaRecall</strong>
 				if UserID(ctx) != 0 {
-					<form method="POST" action="/logout" style="margin: 0;">
-						<button class="small outline" type="submit">Esci</button>
-					</form>
+					if Role(ctx) == "admin" {
+						<a href="/admin">Farmacie</a>
+						<a href="/change-password">Cambia password</a>
+					}
+					if Role(ctx) == "owner" {
+						<a href="/dashboard">Ordini</a>
+						<a href="/patients">Pazienti</a>
+						<a href="/personnel">Personale</a>
+						<a href="/change-password">Cambia password</a>
+					}
+					if Role(ctx) == "personnel" {
+						<a href="/dashboard">Ordini</a>
+						<a href="/patients">Pazienti</a>
+						<a href="/change-password">Cambia password</a>
+					}
+					<span class="hstack gap-2" style="margin-left: auto;">
+						<span class="text-lighter">
+							if PharmacyName(ctx) != "" {
+								{ PharmacyName(ctx) } &mdash;
+							}
+							{ UserName(ctx) }
+						</span>
+						<form method="POST" action="/logout" style="margin: 0;">
+							<button class="small outline" type="submit">Esci</button>
+						</form>
+					</span>
 				}
 			</nav>
 			<main class="container" style="padding-block: var(--space-4);">
