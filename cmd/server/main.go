@@ -112,8 +112,13 @@ func run() error {
 			RecordRefill: handler.HandleRecordRefill(prescriptionSvc),
 		},
 		Order: web.OrderHandlers{
-			Dashboard:     handler.HandleDashboard(orderSvc, orderSvc, cfg.Lookahead.Days),
+			Dashboard:     handler.HandleDashboard(orderSvc, orderSvc, notificationSvc, cfg.Lookahead.Days),
 			AdvanceStatus: handler.HandleAdvanceOrderStatus(orderSvc),
+		},
+		Notification: web.NotificationHandlers{
+			List:        handler.HandleNotificationList(notificationSvc),
+			MarkRead:    handler.HandleMarkNotificationRead(notificationSvc),
+			MarkAllRead: handler.HandleMarkAllNotificationsRead(notificationSvc),
 		},
 		Admin: web.AdminHandlers{
 			Dashboard:       handler.HandleAdminDashboard(pharmacySvc),

@@ -1,0 +1,69 @@
+package web
+
+import (
+	"fmt"
+
+	"github.com/giorgiovilardo/pharmarecall/internal/notification"
+)
+
+func hasUnread(notifs []notification.Notification) bool {
+	for _, n := range notifs {
+		if !n.Read {
+			return true
+		}
+	}
+	return false
+}
+
+templ NotificationListPage(notifs []notification.Notification) {
+	@Layout("Notifiche") {
+		<div class="hstack justify-between mb-4">
+			<h1>Notifiche</h1>
+			if hasUnread(notifs) {
+				<form method="POST" action="/notifications/read-all" style="margin: 0;">
+					<button class="small outline" type="submit">Segna tutte come lette</button>
+				</form>
+			}
+		</div>
+		if len(notifs) == 0 {
+			<p class="text-lighter">Nessuna notifica.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Data</th>
+						<th>Paziente</th>
+						<th>Farmaco</th>
+						<th>Esaurimento</th>
+						<th>Stato</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, n := range notifs {
+						<tr>
+							<td>{ fmtDate(n.CreatedAt) }</td>
+							<td>{ n.FirstName } { n.LastName }</td>
+							<td>{ n.MedicationName }</td>
+							<td>{ fmtDate(n.EstimatedDepletionDate()) }</td>
+							<td>
+								if n.Read {
+									<span class="badge success">Letta</span>
+								} else {
+									<span class="badge warning">Non letta</span>
+								}
+							</td>
+							<td>
+								if !n.Read {
+									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/notifications/%d/read", n.ID)) } style="margin: 0;">
+										<button type="submit" class="small outline">Segna come letta</button>
+									</form>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	}
+}

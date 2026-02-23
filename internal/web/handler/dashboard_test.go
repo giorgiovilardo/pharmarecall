@@ -53,19 +53,38 @@ func (s *stubOrderAdvancer) AdvanceStatus(_ context.Context, orderID int64, now 
 	return s.err
 }
 
+type stubApproachingNotifier struct {
+	called          bool
+	pharmacyID      int64
+	prescriptionIDs []int64
+	err             error
+}
+
+func (s *stubApproachingNotifier) GenerateApproaching(_ context.Context, pharmacyID int64, prescriptionIDs []int64) error {
+	s.called = true
+	s.pharmacyID = pharmacyID
+	s.prescriptionIDs = prescriptionIDs
+	return s.err
+}
+
 // --- Dashboard test server ---
 
 type dashTestDeps struct {
 	sm       *scs.SessionManager
 	ensurer  handler.OrderEnsurer
 	lister   handler.DashboardLister
+	notifier handler.ApproachingNotifier
 	advancer handler.OrderStatusAdvancer
 }
 
 func dashTestServer(d dashTestDeps) *httptest.Server {
 	mux := http.NewServeMux()
 	if d.ensurer != nil && d.lister != nil {
-		mux.Handle("GET /dashboard", web.RequirePharmacyStaff(http.HandlerFunc(handler.HandleDashboard(d.ensurer, d.lister, 7))))
+		notifier := d.notifier
+		if notifier == nil {
+			notifier = &stubApproachingNotifier{}
+		}
+		mux.Handle("GET /dashboard", web.RequirePharmacyStaff(http.HandlerFunc(handler.HandleDashboard(d.ensurer, d.lister, notifier, 7))))
 	}
 	if d.advancer != nil {
 		mux.Handle("POST /orders/{id}/advance", web.RequirePharmacyStaff(http.HandlerFunc(handler.HandleAdvanceOrderStatus(d.advancer))))

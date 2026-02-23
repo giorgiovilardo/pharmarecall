@@ -36,7 +36,7 @@ type DashboardFilters struct {
 }
 
 // HandleDashboard renders the order dashboard for pharmacy staff.
-func HandleDashboard(ensurer OrderEnsurer, lister DashboardLister, lookaheadDays int) http.HandlerFunc {
+func HandleDashboard(ensurer OrderEnsurer, lister DashboardLister, notifier ApproachingNotifier, lookaheadDays int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pharmacyID := web.PharmacyID(r.Context())
 		now := time.Now()
@@ -51,6 +51,19 @@ func HandleDashboard(ensurer OrderEnsurer, lister DashboardLister, lookaheadDays
 			slog.Error("listing dashboard", "error", err)
 			http.Error(w, "Errore interno.", http.StatusInternalServerError)
 			return
+		}
+
+		// Generate notifications for approaching prescriptions.
+		var approachingIDs []int64
+		for _, e := range entries {
+			if e.PrescriptionStatus(now) == "approaching" {
+				approachingIDs = append(approachingIDs, e.PrescriptionID)
+			}
+		}
+		if len(approachingIDs) > 0 {
+			if err := notifier.GenerateApproaching(r.Context(), pharmacyID, approachingIDs); err != nil {
+				slog.Error("generating notifications", "error", err)
+			}
 		}
 
 		filters := DashboardFilters{

@@ -49,6 +49,13 @@ type OrderHandlers struct {
 	AdvanceStatus http.HandlerFunc
 }
 
+// NotificationHandlers groups all notification handler funcs.
+type NotificationHandlers struct {
+	List        http.HandlerFunc
+	MarkRead    http.HandlerFunc
+	MarkAllRead http.HandlerFunc
+}
+
 // Handlers groups all handler funcs for routing.
 type Handlers struct {
 	LoginPage      http.HandlerFunc
@@ -61,6 +68,7 @@ type Handlers struct {
 	Patient        PatientHandlers
 	Prescription   PrescriptionHandlers
 	Order          OrderHandlers
+	Notification   NotificationHandlers
 }
 
 // NewRouter builds the ServeMux with all routes. Handlers are constructed
@@ -83,6 +91,11 @@ func NewRouter(h Handlers) *http.ServeMux {
 
 	// Order routes — RequirePharmacyStaff middleware
 	mux.Handle("POST /orders/{id}/advance", RequirePharmacyStaff(http.HandlerFunc(h.Order.AdvanceStatus)))
+
+	// Notification routes — RequirePharmacyStaff middleware
+	mux.Handle("GET /notifications", RequirePharmacyStaff(http.HandlerFunc(h.Notification.List)))
+	mux.Handle("POST /notifications/{id}/read", RequirePharmacyStaff(http.HandlerFunc(h.Notification.MarkRead)))
+	mux.Handle("POST /notifications/read-all", RequirePharmacyStaff(http.HandlerFunc(h.Notification.MarkAllRead)))
 
 	// Admin routes — RequireAdmin middleware applied per-handler
 	mux.Handle("GET /admin", RequireAdmin(http.HandlerFunc(h.Admin.Dashboard)))
