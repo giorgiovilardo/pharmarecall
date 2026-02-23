@@ -34,6 +34,25 @@ type Pharmacy struct {
 	UpdatedAt pgtype.Timestamptz
 }
 
+type Prescription struct {
+	ID               int64
+	PatientID        int64
+	MedicationName   string
+	UnitsPerBox      int32
+	DailyConsumption pgtype.Numeric
+	BoxStartDate     pgtype.Date
+	CreatedAt        pgtype.Timestamptz
+	UpdatedAt        pgtype.Timestamptz
+}
+
+type RefillHistory struct {
+	ID             int64
+	PrescriptionID int64
+	BoxStartDate   pgtype.Date
+	BoxEndDate     pgtype.Date
+	CreatedAt      pgtype.Timestamptz
+}
+
 type Session struct {
 	Token  string
 	Data   []byte

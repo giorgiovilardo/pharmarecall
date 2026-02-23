@@ -61,13 +61,13 @@
 - [x] 5.7 Implement patient update handler with validation
 - [x] 5.8 Implement consensus recording on patient detail page: button to mark active with current date
 - [x] 5.9 Add pharmacy scoping to all patient queries (filter by logged-in user's pharmacy_id)
-- [ ] 5.10 Verify end-to-end: personnel logs in, creates patient, records consensus, edits patient, sees patient list
+- [x] 5.10 Verify end-to-end: personnel logs in, creates patient, records consensus, edits patient, sees patient list
 
 ## 6. Recurring Prescriptions & Refills
 
-- [ ] 6.1 Migration: create `prescriptions` table (id, patient_id, medication_name, units_per_box, daily_consumption, box_start_date, created_at, updated_at). Index on patient_id.
-- [ ] 6.2 Migration: create `refill_history` table (id, prescription_id, box_start_date, box_end_date, created_at)
-- [ ] 6.3 Write sqlc queries for prescriptions: CreatePrescription, ListPrescriptionsByPatient, GetPrescriptionByID, UpdatePrescription, InsertRefillHistory
+- [x] 6.1 Migration: create `prescriptions` table (id, patient_id, medication_name, units_per_box, daily_consumption, box_start_date, created_at, updated_at). Index on patient_id.
+- [x] 6.2 Migration: create `refill_history` table (id, prescription_id, box_start_date, box_end_date, created_at)
+- [x] 6.3 Write sqlc queries for prescriptions: CreatePrescription, ListPrescriptionsByPatient, GetPrescriptionByID, UpdatePrescription, InsertRefillHistory
 - [ ] 6.4 Implement depletion calculation: box_start_date + floor(units_per_box / daily_consumption) days
 - [ ] 6.5 Implement prescription status classification: ok (>7 days), approaching (<=7 days), depleted (<=0 days)
 - [ ] 6.6 Create prescription creation form on patient detail page: medication name, units per box, daily consumption, box start date
