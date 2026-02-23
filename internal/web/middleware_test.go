@@ -12,11 +12,12 @@ import (
 func TestRequireAuthRedirectsUnauthenticated(t *testing.T) {
 	sm := scs.New()
 
-	protected := web.RequireAuth(sm)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	protected := web.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	srv := httptest.NewServer(sm.LoadAndSave(protected))
+	// LoadUser + RequireAuth chain
+	srv := httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(protected)))
 	defer srv.Close()
 
 	resp, err := noFollowClient().Get(srv.URL + "/protected")
@@ -33,43 +34,38 @@ func TestRequireAuthRedirectsUnauthenticated(t *testing.T) {
 	}
 }
 
-func TestRequireAuthAllowsAuthenticatedAndSetsContext(t *testing.T) {
+func TestLoadUserSetsContextForAuthenticatedUser(t *testing.T) {
 	sm := scs.New()
 
 	var gotUserID int64
 	var gotRole string
 
-	protected := web.RequireAuth(sm)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotUserID = web.UserID(r.Context())
 		gotRole = web.Role(r.Context())
 		w.WriteHeader(http.StatusOK)
-	}))
+	})
 
 	mux := http.NewServeMux()
-	mux.Handle("GET /protected", protected)
-	// Setup route to create a session (simulates login)
+	mux.Handle("GET /check", handler)
 	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
 		sm.Put(r.Context(), "userID", int64(42))
 		sm.Put(r.Context(), "role", "personnel")
 		w.WriteHeader(http.StatusOK)
 	})
 
-	srv := httptest.NewServer(sm.LoadAndSave(mux))
+	srv := httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(mux)))
 	defer srv.Close()
 
-	// First, set up a session by hitting the setup route
 	client := noFollowClient()
 	setupResp, err := client.Get(srv.URL + "/setup-session")
 	if err != nil {
 		t.Fatalf("setting up session: %v", err)
 	}
 	setupResp.Body.Close()
-
-	// Extract session cookie
 	cookies := setupResp.Cookies()
 
-	// Now hit the protected route with the session cookie
-	req, err := http.NewRequest(http.MethodGet, srv.URL+"/protected", nil)
+	req, err := http.NewRequest(http.MethodGet, srv.URL+"/check", nil)
 	if err != nil {
 		t.Fatalf("creating request: %v", err)
 	}
@@ -79,7 +75,7 @@ func TestRequireAuthAllowsAuthenticatedAndSetsContext(t *testing.T) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Fatalf("requesting protected page: %v", err)
+		t.Fatalf("requesting page: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -91,5 +87,32 @@ func TestRequireAuthAllowsAuthenticatedAndSetsContext(t *testing.T) {
 	}
 	if gotRole != "personnel" {
 		t.Errorf("role = %q, want personnel", gotRole)
+	}
+}
+
+func TestLoadUserPassesThroughForUnauthenticated(t *testing.T) {
+	sm := scs.New()
+
+	var gotUserID int64
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotUserID = web.UserID(r.Context())
+		w.WriteHeader(http.StatusOK)
+	})
+
+	srv := httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(handler)))
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatalf("requesting page: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want 200", resp.StatusCode)
+	}
+	if gotUserID != 0 {
+		t.Errorf("userID = %d, want 0 (unauthenticated)", gotUserID)
 	}
 }

@@ -33,6 +33,9 @@ migrate *args:
 migrate_create name:
   go tool goose -dir db/migrations -s postgres "{{db_url}}" create {{name}} sql
 
+seed email password:
+  go run ./cmd/seed --email {{email}} --password {{password}}
+
 check: fmt vet fix test
 
 openspec *args:

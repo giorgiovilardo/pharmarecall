@@ -7,3 +7,13 @@ WHERE email = $1;
 SELECT id, email, password_hash, name, role, pharmacy_id, created_at, updated_at
 FROM users
 WHERE id = $1;
+
+-- name: CreateUser :one
+INSERT INTO users (email, password_hash, name, role, pharmacy_id)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, email, password_hash, name, role, pharmacy_id, created_at, updated_at;
+
+-- name: UpdateUserPassword :exec
+UPDATE users
+SET password_hash = $2, updated_at = now()
+WHERE id = $1;

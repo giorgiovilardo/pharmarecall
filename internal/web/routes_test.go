@@ -13,12 +13,16 @@ import (
 // integration-level route tests.
 func newTestStack() http.Handler {
 	sm := scs.New()
+	stub := &stubUserGetter{}
 	mux := web.NewRouter(
 		web.HandleLoginPage(),
-		web.HandleLoginPost(sm, &stubUserGetter{}),
+		web.HandleLoginPost(sm, stub),
+		web.HandleLogout(sm),
+		web.HandleChangePasswordPage(),
+		web.HandleChangePasswordPost(sm, &stubPasswordChanger{}),
 	)
 	cop := http.NewCrossOriginProtection()
-	return cop.Handler(sm.LoadAndSave(mux))
+	return cop.Handler(sm.LoadAndSave(web.LoadUser(sm)(mux)))
 }
 
 func TestCrossOriginPostRejected(t *testing.T) {

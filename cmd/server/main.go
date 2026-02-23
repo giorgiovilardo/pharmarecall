@@ -62,11 +62,14 @@ func run() error {
 	mux := web.NewRouter(
 		web.HandleLoginPage(),
 		web.HandleLoginPost(sm, queries),
+		web.HandleLogout(sm),
+		web.HandleChangePasswordPage(),
+		web.HandleChangePasswordPost(sm, queries),
 	)
 
-	// Compose middleware
+	// Compose middleware: CORS → sessions → load user → router
 	cop := http.NewCrossOriginProtection()
-	handler := cop.Handler(sm.LoadAndSave(mux))
+	handler := cop.Handler(sm.LoadAndSave(web.LoadUser(sm)(mux)))
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),

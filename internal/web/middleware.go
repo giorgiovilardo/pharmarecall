@@ -14,14 +14,15 @@ const (
 	ctxKeyRole   contextKey = "role"
 )
 
-// RequireAuth redirects to /login if the session has no userID.
-// Otherwise it attaches userID and role to the request context.
-func RequireAuth(sessions *scs.SessionManager) func(http.Handler) http.Handler {
+// LoadUser reads userID and role from the session and attaches them to
+// the request context. Does not redirect — use on all routes so the
+// layout can conditionally show nav items.
+func LoadUser(sessions *scs.SessionManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			userID := sessions.GetInt64(r.Context(), "userID")
 			if userID == 0 {
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				next.ServeHTTP(w, r)
 				return
 			}
 
@@ -33,6 +34,18 @@ func RequireAuth(sessions *scs.SessionManager) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+// RequireAuth redirects to /login if the user is not loaded in context.
+// Must be used after LoadUser.
+func RequireAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if UserID(r.Context()) == 0 {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // UserID returns the authenticated user's ID from the request context.

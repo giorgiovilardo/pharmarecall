@@ -7,7 +7,45 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (email, password_hash, name, role, pharmacy_id)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, email, password_hash, name, role, pharmacy_id, created_at, updated_at
+`
+
+type CreateUserParams struct {
+	Email        string
+	PasswordHash string
+	Name         string
+	Role         string
+	PharmacyID   pgtype.Int8
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser,
+		arg.Email,
+		arg.PasswordHash,
+		arg.Name,
+		arg.Role,
+		arg.PharmacyID,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Name,
+		&i.Role,
+		&i.PharmacyID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
 
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, email, password_hash, name, role, pharmacy_id, created_at, updated_at
@@ -51,4 +89,20 @@ func (q *Queries) GetUserByID(ctx context.Context, id int64) (User, error) {
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :exec
+UPDATE users
+SET password_hash = $2, updated_at = now()
+WHERE id = $1
+`
+
+type UpdateUserPasswordParams struct {
+	ID           int64
+	PasswordHash string
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	_, err := q.db.Exec(ctx, updateUserPassword, arg.ID, arg.PasswordHash)
+	return err
 }
