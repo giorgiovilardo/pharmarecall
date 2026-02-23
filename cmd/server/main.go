@@ -17,6 +17,7 @@ import (
 	"github.com/giorgiovilardo/pharmarecall/internal/auth"
 	"github.com/giorgiovilardo/pharmarecall/internal/config"
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/notification"
 	"github.com/giorgiovilardo/pharmarecall/internal/order"
 	"github.com/giorgiovilardo/pharmarecall/internal/patient"
 	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
@@ -80,6 +81,9 @@ func run() error {
 	orderRepo := order.NewPgxRepository(pool, queries)
 	orderSvc := order.NewService(orderRepo, prescriptionSvc)
 
+	notificationRepo := notification.NewPgxRepository(pool, queries)
+	notificationSvc := notification.NewService(notificationRepo)
+
 	// Build handlers
 	mux := web.NewRouter(web.Handlers{
 		LoginPage:      handler.HandleLoginPage(),
@@ -122,9 +126,9 @@ func run() error {
 		},
 	})
 
-	// Compose middleware: CORS → sessions → load user → router
+	// Compose middleware: CORS → sessions → load user → notification count → router
 	cop := http.NewCrossOriginProtection()
-	h := cop.Handler(sm.LoadAndSave(web.LoadUser(sm)(mux)))
+	h := cop.Handler(sm.LoadAndSave(web.LoadUser(sm)(web.LoadNotificationCount(notificationSvc)(mux))))
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),

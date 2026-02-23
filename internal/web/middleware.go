@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/alexedwards/scs/v2"
@@ -10,11 +11,12 @@ import (
 type contextKey string
 
 const (
-	ctxKeyUserID       contextKey = "userID"
-	ctxKeyRole         contextKey = "role"
-	ctxKeyPharmacyID   contextKey = "pharmacyID"
-	ctxKeyUserName     contextKey = "userName"
-	ctxKeyPharmacyName contextKey = "pharmacyName"
+	ctxKeyUserID               contextKey = "userID"
+	ctxKeyRole                 contextKey = "role"
+	ctxKeyPharmacyID           contextKey = "pharmacyID"
+	ctxKeyUserName             contextKey = "userName"
+	ctxKeyPharmacyName         contextKey = "pharmacyName"
+	ctxKeyUnreadNotifications  contextKey = "unreadNotifications"
 )
 
 // LoadUser reads userID and role from the session and attaches them to
@@ -122,4 +124,35 @@ func UserName(ctx context.Context) string {
 func PharmacyName(ctx context.Context) string {
 	name, _ := ctx.Value(ctxKeyPharmacyName).(string)
 	return name
+}
+
+// UnreadNotificationCounter counts unread notifications. Defined here (consumer-side).
+type UnreadNotificationCounter interface {
+	CountUnread(ctx context.Context, pharmacyID int64) (int64, error)
+}
+
+// LoadNotificationCount loads the unread notification count into context for pharmacy staff.
+// Must be used after LoadUser.
+func LoadNotificationCount(counter UnreadNotificationCounter) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			pharmacyID := PharmacyID(r.Context())
+			if pharmacyID != 0 {
+				count, err := counter.CountUnread(r.Context(), pharmacyID)
+				if err != nil {
+					slog.Error("counting unread notifications", "error", err)
+				} else if count > 0 {
+					ctx := context.WithValue(r.Context(), ctxKeyUnreadNotifications, count)
+					r = r.WithContext(ctx)
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// UnreadNotificationCount returns the unread notification count from context.
+func UnreadNotificationCount(ctx context.Context) int64 {
+	count, _ := ctx.Value(ctxKeyUnreadNotifications).(int64)
+	return count
 }

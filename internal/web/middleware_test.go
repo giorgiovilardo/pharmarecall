@@ -1,6 +1,7 @@
 package web_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -8,6 +9,17 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/giorgiovilardo/pharmarecall/internal/web"
 )
+
+// --- Notification count mock ---
+
+type stubUnreadCounter struct {
+	result int64
+	err    error
+}
+
+func (s *stubUnreadCounter) CountUnread(_ context.Context, _ int64) (int64, error) {
+	return s.result, s.err
+}
 
 func TestRequireAuthRedirectsUnauthenticated(t *testing.T) {
 	sm := scs.New()
@@ -407,5 +419,170 @@ func TestLoadUserPassesThroughForUnauthenticated(t *testing.T) {
 	}
 	if gotUserID != 0 {
 		t.Errorf("userID = %d, want 0 (unauthenticated)", gotUserID)
+	}
+}
+
+// --- LoadNotificationCount tests ---
+
+func TestLoadNotificationCountSetsCountForPharmacyStaff(t *testing.T) {
+	sm := scs.New()
+	counter := &stubUnreadCounter{result: 5}
+
+	var gotCount int64
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotCount = web.UnreadNotificationCount(r.Context())
+		w.WriteHeader(http.StatusOK)
+	})
+
+	mux := http.NewServeMux()
+	mux.Handle("GET /check", handler)
+	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
+		sm.Put(r.Context(), "userID", int64(1))
+		sm.Put(r.Context(), "role", "personnel")
+		sm.Put(r.Context(), "pharmacyID", int64(7))
+		w.WriteHeader(http.StatusOK)
+	})
+
+	srv := httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(web.LoadNotificationCount(counter)(mux))))
+	defer srv.Close()
+
+	client := noFollowClient()
+	setupResp, err := client.Get(srv.URL + "/setup-session")
+	if err != nil {
+		t.Fatalf("setting up session: %v", err)
+	}
+	setupResp.Body.Close()
+
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/check", nil)
+	for _, c := range setupResp.Cookies() {
+		req.AddCookie(c)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("requesting page: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if gotCount != 5 {
+		t.Errorf("unreadCount = %d, want 5", gotCount)
+	}
+}
+
+func TestLoadNotificationCountSkipsForAdmin(t *testing.T) {
+	sm := scs.New()
+	counter := &stubUnreadCounter{result: 10}
+
+	var gotCount int64
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotCount = web.UnreadNotificationCount(r.Context())
+		w.WriteHeader(http.StatusOK)
+	})
+
+	mux := http.NewServeMux()
+	mux.Handle("GET /check", handler)
+	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
+		sm.Put(r.Context(), "userID", int64(1))
+		sm.Put(r.Context(), "role", "admin")
+		// admin has no pharmacyID
+		w.WriteHeader(http.StatusOK)
+	})
+
+	srv := httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(web.LoadNotificationCount(counter)(mux))))
+	defer srv.Close()
+
+	client := noFollowClient()
+	setupResp, err := client.Get(srv.URL + "/setup-session")
+	if err != nil {
+		t.Fatalf("setting up session: %v", err)
+	}
+	setupResp.Body.Close()
+
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/check", nil)
+	for _, c := range setupResp.Cookies() {
+		req.AddCookie(c)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("requesting page: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if gotCount != 0 {
+		t.Errorf("unreadCount = %d, want 0 (admin has no pharmacy)", gotCount)
+	}
+}
+
+func TestLoadNotificationCountZeroNotSetInContext(t *testing.T) {
+	sm := scs.New()
+	counter := &stubUnreadCounter{result: 0}
+
+	var gotCount int64
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotCount = web.UnreadNotificationCount(r.Context())
+		w.WriteHeader(http.StatusOK)
+	})
+
+	mux := http.NewServeMux()
+	mux.Handle("GET /check", handler)
+	mux.HandleFunc("GET /setup-session", func(w http.ResponseWriter, r *http.Request) {
+		sm.Put(r.Context(), "userID", int64(1))
+		sm.Put(r.Context(), "role", "personnel")
+		sm.Put(r.Context(), "pharmacyID", int64(7))
+		w.WriteHeader(http.StatusOK)
+	})
+
+	srv := httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(web.LoadNotificationCount(counter)(mux))))
+	defer srv.Close()
+
+	client := noFollowClient()
+	setupResp, err := client.Get(srv.URL + "/setup-session")
+	if err != nil {
+		t.Fatalf("setting up session: %v", err)
+	}
+	setupResp.Body.Close()
+
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/check", nil)
+	for _, c := range setupResp.Cookies() {
+		req.AddCookie(c)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatalf("requesting page: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if gotCount != 0 {
+		t.Errorf("unreadCount = %d, want 0", gotCount)
+	}
+}
+
+func TestLoadNotificationCountSkipsForUnauthenticated(t *testing.T) {
+	sm := scs.New()
+	counter := &stubUnreadCounter{result: 3}
+
+	var gotCount int64
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotCount = web.UnreadNotificationCount(r.Context())
+		w.WriteHeader(http.StatusOK)
+	})
+
+	srv := httptest.NewServer(sm.LoadAndSave(web.LoadUser(sm)(web.LoadNotificationCount(counter)(handler))))
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/")
+	if err != nil {
+		t.Fatalf("requesting page: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if gotCount != 0 {
+		t.Errorf("unreadCount = %d, want 0 (unauthenticated)", gotCount)
 	}
 }
