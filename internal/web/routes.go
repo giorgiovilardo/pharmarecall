@@ -61,6 +61,11 @@ func NewRouter(h Handlers) *http.ServeMux {
 	mux.HandleFunc("GET /change-password", h.ChangePassPage)
 	mux.HandleFunc("POST /change-password", h.ChangePassPost)
 
+	// Dashboard — pharmacy staff landing page
+	mux.Handle("GET /dashboard", RequirePharmacyStaff(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		DashboardPage(Role(r.Context())).Render(r.Context(), w)
+	})))
+
 	// Admin routes — RequireAdmin middleware applied per-handler
 	mux.Handle("GET /admin", RequireAdmin(http.HandlerFunc(h.Admin.Dashboard)))
 	mux.Handle("GET /admin/pharmacies/new", RequireAdmin(http.HandlerFunc(h.Admin.NewPharmacy)))

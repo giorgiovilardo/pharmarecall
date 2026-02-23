@@ -1,0 +1,17 @@
+package web
+
+templ DashboardPage(role string) {
+	@Layout("Dashboard") {
+		<h1>Dashboard</h1>
+		<p>Benvenuto in PharmaRecall.</p>
+		<nav>
+			<ul>
+				<li><a href="/patients">Pazienti</a></li>
+				if role == "owner" {
+					<li><a href="/personnel">Personale</a></li>
+				}
+				<li><a href="/change-password">Cambia password</a></li>
+			</ul>
+		</nav>
+	}
+}
