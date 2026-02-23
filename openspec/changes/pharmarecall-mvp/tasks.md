@@ -79,17 +79,17 @@
 
 ## 7. Order Dashboard
 
-- [ ] 7.1 Migration: create `orders` table (id, prescription_id, cycle_start_date, estimated_depletion_date, status, created_at, updated_at). Indexes: on prescription_id, on status.
-- [ ] 7.2 Write sqlc queries for orders: CreateOrder, GetActiveOrderByPrescription, UpdateOrderStatus, ListDashboardOrders (join prescriptions + patients, filter by pharmacy)
-- [ ] 7.3 Implement automatic order creation: on dashboard load, create pending orders for prescriptions in the lookahead window that have no active (pending/prepared) order for the current cycle
-- [ ] 7.4 Create dashboard page with entries grouped by prescription status (depleted first, then approaching, then ok)
-- [ ] 7.5 Display per entry: patient name, medication, depletion date, days remaining, status badge, fulfillment method, order status
-- [ ] 7.6 Implement prescription status filter (all, depleted, approaching, ok)
-- [ ] 7.7 Implement date range filter
-- [ ] 7.8 Implement order status filter (all, pending, prepared, fulfilled)
-- [ ] 7.9 Implement order status advancement from dashboard: pending → prepared → fulfilled (form POST)
-- [ ] 7.10 Implement configurable lookahead window (default 7 days)
-- [ ] 7.11 Verify end-to-end: personnel sees dashboard, orders auto-created, filters work, advances order through full lifecycle
+- [x] 7.1 Migration: create `orders` table (id, prescription_id, cycle_start_date, estimated_depletion_date, status, created_at, updated_at). Indexes: on prescription_id, on status.
+- [x] 7.2 Write sqlc queries for orders: CreateOrder, GetActiveOrderByPrescription, UpdateOrderStatus, ListDashboardOrders (join prescriptions + patients, filter by pharmacy)
+- [x] 7.3 Implement automatic order creation: on dashboard load, create pending orders for prescriptions in the lookahead window that have no active (pending/prepared) order for the current cycle
+- [x] 7.4 Create dashboard page with entries grouped by prescription status (depleted first, then approaching, then ok)
+- [x] 7.5 Display per entry: patient name, medication, depletion date, days remaining, status badge, fulfillment method, order status
+- [x] 7.6 Implement prescription status filter (all, depleted, approaching, ok)
+- [x] 7.7 Implement date range filter
+- [x] 7.8 Implement order status filter (all, pending, prepared, fulfilled)
+- [x] 7.9 Implement order status advancement from dashboard: pending → prepared → fulfilled (form POST)
+- [x] 7.10 Implement configurable lookahead window (default 7 days)
+- [x] 7.11 Verify end-to-end: personnel sees dashboard, orders auto-created, filters work, advances order through full lifecycle
 
 ## 8. Personnel Notifications
 

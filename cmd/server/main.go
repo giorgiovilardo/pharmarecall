@@ -17,6 +17,7 @@ import (
 	"github.com/giorgiovilardo/pharmarecall/internal/auth"
 	"github.com/giorgiovilardo/pharmarecall/internal/config"
 	"github.com/giorgiovilardo/pharmarecall/internal/db"
+	"github.com/giorgiovilardo/pharmarecall/internal/order"
 	"github.com/giorgiovilardo/pharmarecall/internal/patient"
 	"github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
 	"github.com/giorgiovilardo/pharmarecall/internal/prescription"
@@ -76,6 +77,9 @@ func run() error {
 	prescriptionRepo := prescription.NewPgxRepository(pool, queries)
 	prescriptionSvc := prescription.NewService(prescriptionRepo, patientSvc)
 
+	orderRepo := order.NewPgxRepository(pool, queries)
+	orderSvc := order.NewService(orderRepo, prescriptionSvc)
+
 	// Build handlers
 	mux := web.NewRouter(web.Handlers{
 		LoginPage:      handler.HandleLoginPage(),
@@ -102,6 +106,10 @@ func run() error {
 			Edit:         handler.HandlePrescriptionEditPage(prescriptionSvc, patientSvc),
 			Update:       handler.HandleUpdatePrescription(prescriptionSvc, prescriptionSvc, patientSvc),
 			RecordRefill: handler.HandleRecordRefill(prescriptionSvc),
+		},
+		Order: web.OrderHandlers{
+			Dashboard:     handler.HandleDashboard(orderSvc, orderSvc, cfg.Lookahead.Days),
+			AdvanceStatus: handler.HandleAdvanceOrderStatus(orderSvc),
 		},
 		Admin: web.AdminHandlers{
 			Dashboard:       handler.HandleAdminDashboard(pharmacySvc),

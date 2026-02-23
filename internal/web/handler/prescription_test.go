@@ -55,14 +55,16 @@ func (s *stubRxUpdater) Update(_ context.Context, p prescription.UpdateParams) e
 }
 
 type stubRxRefiller struct {
-	called bool
-	params prescription.RefillParams
-	err    error
+	called         bool
+	prescriptionID int64
+	newStartDate   time.Time
+	err            error
 }
 
-func (s *stubRxRefiller) RecordRefill(_ context.Context, p prescription.RefillParams) error {
+func (s *stubRxRefiller) RecordRefill(_ context.Context, prescriptionID int64, newStartDate time.Time) error {
 	s.called = true
-	s.params = p
+	s.prescriptionID = prescriptionID
+	s.newStartDate = newStartDate
 	return s.err
 }
 
@@ -398,8 +400,8 @@ func TestRecordRefillSuccessRedirects(t *testing.T) {
 	if !refiller.called {
 		t.Error("RecordRefill was not called")
 	}
-	if refiller.params.PrescriptionID != 5 {
-		t.Errorf("PrescriptionID = %d, want 5", refiller.params.PrescriptionID)
+	if refiller.prescriptionID != 5 {
+		t.Errorf("PrescriptionID = %d, want 5", refiller.prescriptionID)
 	}
 }
 

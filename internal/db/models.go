@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Order struct {
+	ID                     int64
+	PrescriptionID         int64
+	CycleStartDate         pgtype.Date
+	EstimatedDepletionDate pgtype.Date
+	Status                 string
+	CreatedAt              pgtype.Timestamptz
+	UpdatedAt              pgtype.Timestamptz
+}
+
 type Patient struct {
 	ID              int64
 	PharmacyID      int64

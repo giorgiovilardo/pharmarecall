@@ -136,6 +136,11 @@ func (r *PgxRepository) RecordRefill(ctx context.Context, p RefillParams) error 
 		return fmt.Errorf("updating prescription start date: %w", err)
 	}
 
+	// Auto-fulfill any active order for this prescription's previous cycle.
+	if err := qtx.FulfillActiveOrderByPrescription(ctx, p.PrescriptionID); err != nil {
+		return fmt.Errorf("fulfilling active order: %w", err)
+	}
+
 	return tx.Commit(ctx)
 }
 

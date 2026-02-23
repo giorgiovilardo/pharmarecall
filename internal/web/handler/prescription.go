@@ -36,7 +36,7 @@ type PrescriptionUpdater interface {
 
 // PrescriptionRefiller records a refill.
 type PrescriptionRefiller interface {
-	RecordRefill(ctx context.Context, p prescription.RefillParams) error
+	RecordRefill(ctx context.Context, prescriptionID int64, newStartDate time.Time) error
 }
 
 // HandleNewPrescriptionPage renders the prescription creation form.
@@ -288,10 +288,7 @@ func HandleRecordRefill(refiller PrescriptionRefiller) http.HandlerFunc {
 			return
 		}
 
-		if err := refiller.RecordRefill(r.Context(), prescription.RefillParams{
-			PrescriptionID: rxID,
-			NewStartDate:   time.Now().Truncate(24 * time.Hour),
-		}); err != nil {
+		if err := refiller.RecordRefill(r.Context(), rxID, time.Now().Truncate(24*time.Hour)); err != nil {
 			slog.Error("recording refill", "error", err)
 			http.Error(w, "Errore interno.", http.StatusInternalServerError)
 			return

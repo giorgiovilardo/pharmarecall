@@ -43,6 +43,12 @@ type PrescriptionHandlers struct {
 	RecordRefill http.HandlerFunc
 }
 
+// OrderHandlers groups all order/dashboard handler funcs.
+type OrderHandlers struct {
+	Dashboard     http.HandlerFunc
+	AdvanceStatus http.HandlerFunc
+}
+
 // Handlers groups all handler funcs for routing.
 type Handlers struct {
 	LoginPage      http.HandlerFunc
@@ -54,6 +60,7 @@ type Handlers struct {
 	Owner          OwnerHandlers
 	Patient        PatientHandlers
 	Prescription   PrescriptionHandlers
+	Order          OrderHandlers
 }
 
 // NewRouter builds the ServeMux with all routes. Handlers are constructed
@@ -71,10 +78,11 @@ func NewRouter(h Handlers) *http.ServeMux {
 	mux.HandleFunc("GET /change-password", h.ChangePassPage)
 	mux.HandleFunc("POST /change-password", h.ChangePassPost)
 
-	// Dashboard — pharmacy staff landing page
-	mux.Handle("GET /dashboard", RequirePharmacyStaff(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DashboardPage(Role(r.Context())).Render(r.Context(), w)
-	})))
+	// Dashboard — pharmacy staff landing page (order dashboard)
+	mux.Handle("GET /dashboard", RequirePharmacyStaff(http.HandlerFunc(h.Order.Dashboard)))
+
+	// Order routes — RequirePharmacyStaff middleware
+	mux.Handle("POST /orders/{id}/advance", RequirePharmacyStaff(http.HandlerFunc(h.Order.AdvanceStatus)))
 
 	// Admin routes — RequireAdmin middleware applied per-handler
 	mux.Handle("GET /admin", RequireAdmin(http.HandlerFunc(h.Admin.Dashboard)))

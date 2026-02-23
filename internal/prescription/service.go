@@ -3,6 +3,7 @@ package prescription
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 // ConsensusChecker checks if a patient has given consensus.
@@ -86,8 +87,11 @@ func (s *Service) Update(ctx context.Context, p UpdateParams) error {
 }
 
 // RecordRefill delegates to the refill recorder.
-func (s *Service) RecordRefill(ctx context.Context, p RefillParams) error {
-	if err := s.deps.Refill.RecordRefill(ctx, p); err != nil {
+func (s *Service) RecordRefill(ctx context.Context, prescriptionID int64, newStartDate time.Time) error {
+	if err := s.deps.Refill.RecordRefill(ctx, RefillParams{
+		PrescriptionID: prescriptionID,
+		NewStartDate:   newStartDate,
+	}); err != nil {
 		return fmt.Errorf("recording refill: %w", err)
 	}
 	return nil

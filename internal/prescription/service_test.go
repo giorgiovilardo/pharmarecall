@@ -262,10 +262,7 @@ func TestRecordRefillSuccess(t *testing.T) {
 	recorder := &mockRefillRecorder{}
 	svc := prescription.NewServiceWith(prescription.ServiceDeps{Refill: recorder})
 
-	err := svc.RecordRefill(context.Background(), prescription.RefillParams{
-		PrescriptionID: 1,
-		NewStartDate:   date(2026, 2, 1),
-	})
+	err := svc.RecordRefill(context.Background(), 1, date(2026, 2, 1))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -281,10 +278,7 @@ func TestRecordRefillRepoError(t *testing.T) {
 	recorder := &mockRefillRecorder{err: errors.New("db down")}
 	svc := prescription.NewServiceWith(prescription.ServiceDeps{Refill: recorder})
 
-	err := svc.RecordRefill(context.Background(), prescription.RefillParams{
-		PrescriptionID: 1,
-		NewStartDate:   date(2026, 2, 1),
-	})
+	err := svc.RecordRefill(context.Background(), 1, date(2026, 2, 1))
 	if err == nil {
 		t.Fatal("expected error")
 	}
