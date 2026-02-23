@@ -45,7 +45,7 @@
 ## 4. Owner Manages Personnel
 
 - [x] 4.1 Implement owner-only middleware
-- [ ] 4.2 Create personnel list page for pharmacy owners (shows personnel in their pharmacy)
+- [x] 4.2 Create personnel list page for pharmacy owners (shows personnel in their pharmacy)
 - [ ] 4.3 Create add-personnel form: name, email, temporary password
 - [ ] 4.4 Implement add-personnel handler: validate, create user with personnel role scoped to owner's pharmacy
 - [ ] 4.5 Verify end-to-end: owner logs in, sees personnel list, adds personnel, new personnel can log in

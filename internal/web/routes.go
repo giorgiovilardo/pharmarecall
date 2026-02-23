@@ -17,6 +17,11 @@ type AdminHandlers struct {
 	CreatePersonnel http.HandlerFunc
 }
 
+// OwnerHandlers groups all owner-only handler funcs.
+type OwnerHandlers struct {
+	PersonnelList http.HandlerFunc
+}
+
 // Handlers groups all handler funcs for routing.
 type Handlers struct {
 	LoginPage      http.HandlerFunc
@@ -25,6 +30,7 @@ type Handlers struct {
 	ChangePassPage http.HandlerFunc
 	ChangePassPost http.HandlerFunc
 	Admin          AdminHandlers
+	Owner          OwnerHandlers
 }
 
 // NewRouter builds the ServeMux with all routes. Handlers are constructed
@@ -50,6 +56,9 @@ func NewRouter(h Handlers) *http.ServeMux {
 	mux.Handle("POST /admin/pharmacies/{id}", RequireAdmin(http.HandlerFunc(h.Admin.UpdatePharmacy)))
 	mux.Handle("GET /admin/pharmacies/{id}/personnel/new", RequireAdmin(http.HandlerFunc(h.Admin.AddPersonnel)))
 	mux.Handle("POST /admin/pharmacies/{id}/personnel", RequireAdmin(http.HandlerFunc(h.Admin.CreatePersonnel)))
+
+	// Owner routes — RequireOwner middleware applied per-handler
+	mux.Handle("GET /personnel", RequireOwner(http.HandlerFunc(h.Owner.PersonnelList)))
 
 	return mux
 }

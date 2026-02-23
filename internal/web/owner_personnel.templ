@@ -1,0 +1,34 @@
+package web
+
+import "github.com/giorgiovilardo/pharmarecall/internal/pharmacy"
+
+templ OwnerPersonnelPage(personnel []pharmacy.PersonnelMember) {
+	@Layout("Personale") {
+		<div class="flex justify-between items-center mb-4">
+			<h1>Personale</h1>
+			<a href="/personnel/new" class="button">Aggiungi</a>
+		</div>
+		if len(personnel) == 0 {
+			<p>Nessun personale.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Nome</th>
+						<th>Email</th>
+						<th>Ruolo</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, u := range personnel {
+						<tr>
+							<td>{ u.Name }</td>
+							<td>{ u.Email }</td>
+							<td>{ u.Role }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	}
+}

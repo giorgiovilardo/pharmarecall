@@ -75,6 +75,9 @@ func run() error {
 		Logout:         handler.HandleLogout(sm),
 		ChangePassPage: handler.HandleChangePasswordPage(),
 		ChangePassPost: handler.HandleChangePasswordPost(sm, userSvc),
+		Owner: web.OwnerHandlers{
+			PersonnelList: handler.HandleOwnerPersonnelList(pharmacySvc),
+		},
 		Admin: web.AdminHandlers{
 			Dashboard:       handler.HandleAdminDashboard(pharmacySvc),
 			NewPharmacy:     handler.HandleNewPharmacyPage(),
