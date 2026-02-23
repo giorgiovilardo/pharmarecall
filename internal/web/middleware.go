@@ -10,8 +10,9 @@ import (
 type contextKey string
 
 const (
-	ctxKeyUserID contextKey = "userID"
-	ctxKeyRole   contextKey = "role"
+	ctxKeyUserID     contextKey = "userID"
+	ctxKeyRole       contextKey = "role"
+	ctxKeyPharmacyID contextKey = "pharmacyID"
 )
 
 // LoadUser reads userID and role from the session and attaches them to
@@ -27,9 +28,11 @@ func LoadUser(sessions *scs.SessionManager) func(http.Handler) http.Handler {
 			}
 
 			role := sessions.GetString(r.Context(), "role")
+			pharmacyID := sessions.GetInt64(r.Context(), "pharmacyID")
 
 			ctx := context.WithValue(r.Context(), ctxKeyUserID, userID)
 			ctx = context.WithValue(ctx, ctxKeyRole, role)
+			ctx = context.WithValue(ctx, ctxKeyPharmacyID, pharmacyID)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -60,6 +63,18 @@ func RequireAdmin(next http.Handler) http.Handler {
 	})
 }
 
+// RequireOwner returns 403 Forbidden if the authenticated user is not an owner.
+// Must be used after LoadUser and RequireAuth.
+func RequireOwner(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if Role(r.Context()) != "owner" {
+			http.Error(w, "Accesso negato.", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // UserID returns the authenticated user's ID from the request context.
 func UserID(ctx context.Context) int64 {
 	id, _ := ctx.Value(ctxKeyUserID).(int64)
@@ -70,4 +85,10 @@ func UserID(ctx context.Context) int64 {
 func Role(ctx context.Context) string {
 	role, _ := ctx.Value(ctxKeyRole).(string)
 	return role
+}
+
+// PharmacyID returns the authenticated user's pharmacy ID from the request context.
+func PharmacyID(ctx context.Context) int64 {
+	id, _ := ctx.Value(ctxKeyPharmacyID).(int64)
+	return id
 }

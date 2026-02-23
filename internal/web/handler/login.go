@@ -50,6 +50,7 @@ func HandleLoginPost(sessions *scs.SessionManager, auth Authenticator) http.Hand
 
 		sessions.Put(r.Context(), "userID", u.ID)
 		sessions.Put(r.Context(), "role", u.Role)
+		sessions.Put(r.Context(), "pharmacyID", u.PharmacyID)
 
 		dest := "/dashboard"
 		if u.Role == "admin" {

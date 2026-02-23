@@ -9,8 +9,9 @@ var (
 
 // User is the domain representation of a user.
 type User struct {
-	ID    int64
-	Email string
-	Name  string
-	Role  string
+	ID         int64
+	Email      string
+	Name       string
+	Role       string
+	PharmacyID int64 // 0 means no pharmacy (admin users)
 }

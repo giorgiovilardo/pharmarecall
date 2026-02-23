@@ -28,10 +28,11 @@ func (r *PgxRepository) GetByEmail(ctx context.Context, email string) (User, str
 		return User{}, "", fmt.Errorf("querying user by email: %w", err)
 	}
 	return User{
-		ID:    row.ID,
-		Email: row.Email,
-		Name:  row.Name,
-		Role:  row.Role,
+		ID:         row.ID,
+		Email:      row.Email,
+		Name:       row.Name,
+		Role:       row.Role,
+		PharmacyID: row.PharmacyID.Int64,
 	}, row.PasswordHash, nil
 }
 
@@ -44,10 +45,11 @@ func (r *PgxRepository) GetByID(ctx context.Context, id int64) (User, string, er
 		return User{}, "", fmt.Errorf("querying user by id: %w", err)
 	}
 	return User{
-		ID:    row.ID,
-		Email: row.Email,
-		Name:  row.Name,
-		Role:  row.Role,
+		ID:         row.ID,
+		Email:      row.Email,
+		Name:       row.Name,
+		Role:       row.Role,
+		PharmacyID: row.PharmacyID.Int64,
 	}, row.PasswordHash, nil
 }
 
