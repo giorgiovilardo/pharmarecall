@@ -68,8 +68,8 @@
 - [x] 6.1 Migration: create `prescriptions` table (id, patient_id, medication_name, units_per_box, daily_consumption, box_start_date, created_at, updated_at). Index on patient_id.
 - [x] 6.2 Migration: create `refill_history` table (id, prescription_id, box_start_date, box_end_date, created_at)
 - [x] 6.3 Write sqlc queries for prescriptions: CreatePrescription, ListPrescriptionsByPatient, GetPrescriptionByID, UpdatePrescription, InsertRefillHistory
-- [ ] 6.4 Implement depletion calculation: box_start_date + floor(units_per_box / daily_consumption) days
-- [ ] 6.5 Implement prescription status classification: ok (>7 days), approaching (<=7 days), depleted (<=0 days)
+- [x] 6.4 Implement depletion calculation: box_start_date + floor(units_per_box / daily_consumption) days
+- [x] 6.5 Implement prescription status classification: ok (>7 days), approaching (<=7 days), depleted (<=0 days)
 - [ ] 6.6 Create prescription creation form on patient detail page: medication name, units per box, daily consumption, box start date
 - [ ] 6.7 Implement prescription creation handler (block if patient has no consensus)
 - [ ] 6.8 Create prescription edit form and update handler
