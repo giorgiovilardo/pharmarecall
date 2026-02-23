@@ -1,0 +1,49 @@
+package web
+
+import (
+	"fmt"
+	"github.com/giorgiovilardo/pharmarecall/internal/patient"
+)
+
+templ PatientListPage(patients []patient.Summary) {
+	@Layout("Pazienti") {
+		<div class="flex justify-between items-center mb-4">
+			<h1>Pazienti</h1>
+			<a href="/patients/new" class="button">Aggiungi</a>
+		</div>
+		if len(patients) == 0 {
+			<p>Nessun paziente. Aggiungi il primo paziente.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Nome</th>
+						<th>Telefono</th>
+						<th>Email</th>
+						<th>Consenso</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, p := range patients {
+						<tr>
+							<td>
+								<a href={ templ.SafeURL(fmt.Sprintf("/patients/%d", p.ID)) }>
+									{ p.LastName } { p.FirstName }
+								</a>
+							</td>
+							<td>{ p.Phone }</td>
+							<td>{ p.Email }</td>
+							<td>
+								if p.Consensus {
+									<span class="badge success">Attivo</span>
+								} else {
+									<span class="badge warning">Da registrare</span>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	}
+}

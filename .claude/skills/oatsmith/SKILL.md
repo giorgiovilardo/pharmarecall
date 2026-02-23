@@ -58,6 +58,7 @@ If `$ARGUMENTS` is empty, list all available components with one-line descriptio
 - Output a fenced HTML code block. Assume Oat CSS/JS are already loaded unless the user asks for a full page.
 - Add a brief note after the code if JS is required or if the component has notable interactive behavior.
 - Keep explanations minimal - the code should be self-evident.
+- If you are used by the model, you can Write html in files and not necessarily just output html code.
 
 ### Do
 

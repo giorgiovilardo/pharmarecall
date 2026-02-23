@@ -54,7 +54,7 @@
 
 - [x] 5.1 Migration: create `patients` table (id, pharmacy_id, first_name, last_name, phone, email, delivery_address, fulfillment, notes, consensus, consensus_date, created_at, updated_at). Index on pharmacy_id.
 - [x] 5.2 Write sqlc queries for patients: CreatePatient, ListPatientsByPharmacy, GetPatientByID, UpdatePatient, SetPatientConsensus
-- [ ] 5.3 Create patient list page (name, contact info, consensus status, prescription count)
+- [x] 5.3 Create patient list page (name, contact info, consensus status, prescription count)
 - [ ] 5.4 Create patient creation form: first name, last name, phone, email, delivery address, fulfillment preference, notes
 - [ ] 5.5 Implement patient creation handler with validation (require name + at least one contact, shipping requires address)
 - [ ] 5.6 Create patient detail/edit page with edit form
