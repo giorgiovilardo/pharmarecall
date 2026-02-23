@@ -110,4 +110,3 @@ func numericToFloat64(n pgtype.Numeric) float64 {
 
 // Ensure PgxRepository satisfies Repository at compile time.
 var _ Repository = (*PgxRepository)(nil)
-

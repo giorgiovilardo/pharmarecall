@@ -1,0 +1,39 @@
+package web
+
+import (
+	"github.com/giorgiovilardo/pharmarecall/internal/order"
+)
+
+templ orderLabel(entry order.DashboardEntry) {
+	<article class="card" style="page-break-inside: avoid; padding: var(--space-4); margin-bottom: var(--space-4);">
+		<p style="margin-bottom: var(--space-2);"><strong>{ entry.FirstName } { entry.LastName }</strong></p>
+		<p style="margin-bottom: var(--space-2);">{ entry.MedicationName }</p>
+		<p style="margin-bottom: var(--space-2);">
+			if entry.Fulfillment == "pickup" {
+				<span class="badge">Ritiro</span>
+			} else {
+				<span class="badge">Spedizione</span>
+			}
+		</p>
+		if entry.Fulfillment == "shipping" {
+			<p style="margin-bottom: 0;">{ entry.DeliveryAddress }</p>
+		} else {
+			if entry.Phone != "" {
+				<p style="margin-bottom: 0;">{ entry.Phone }</p>
+			}
+			if entry.Email != "" {
+				<p style="margin-bottom: 0;">{ entry.Email }</p>
+			}
+		}
+	</article>
+}
+
+templ PrintLabelsPage(entries []order.DashboardEntry) {
+	@PrintLayout("Stampa Etichette") {
+		<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4);">
+			for _, entry := range entries {
+				@orderLabel(entry)
+			}
+		</div>
+	}
+}

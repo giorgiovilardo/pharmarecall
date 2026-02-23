@@ -41,6 +41,43 @@ func advanceButtonText(status string) string {
 	}
 }
 
+func filterQueryString(rxStatus, orderStatus, dateFrom, dateTo string) string {
+	q := ""
+	sep := ""
+	if rxStatus != "" && rxStatus != "all" {
+		q += sep + "rx_status=" + rxStatus
+		sep = "&"
+	}
+	if orderStatus != "" && orderStatus != "all" {
+		q += sep + "order_status=" + orderStatus
+		sep = "&"
+	}
+	if dateFrom != "" {
+		q += sep + "date_from=" + dateFrom
+		sep = "&"
+	}
+	if dateTo != "" {
+		q += sep + "date_to=" + dateTo
+	}
+	return q
+}
+
+func printURL(rxStatus, orderStatus, dateFrom, dateTo string) string {
+	q := filterQueryString(rxStatus, orderStatus, dateFrom, dateTo)
+	if q != "" {
+		return "/dashboard/print?" + q
+	}
+	return "/dashboard/print"
+}
+
+func labelsURL(rxStatus, orderStatus, dateFrom, dateTo string) string {
+	q := filterQueryString(rxStatus, orderStatus, dateFrom, dateTo)
+	if q != "" {
+		return "/dashboard/labels?" + q
+	}
+	return "/dashboard/labels"
+}
+
 templ OrderDashboardPage(entries []order.DashboardEntry, now time.Time, rxStatus string, orderStatus string, dateFrom string, dateTo string) {
 	@Layout("Dashboard Ordini") {
 		<h1>Dashboard Ordini</h1>
@@ -52,13 +89,13 @@ templ OrderDashboardPage(entries []order.DashboardEntry, now time.Time, rxStatus
 						<option value="all" selected?={ rxStatus == "" || rxStatus == "all" }>Tutti</option>
 						<option value="depleted" selected?={ rxStatus == "depleted" }>Esauriti</option>
 						<option value="approaching" selected?={ rxStatus == "approaching" }>In esaurimento</option>
-						<option value="ok" selected?={ rxStatus == "ok" }>OK</option>
 					</select>
 				</div>
 				<div data-field style="margin-bottom: 0;">
 					<label for="order_status">Stato ordine</label>
 					<select name="order_status" id="order_status">
-						<option value="all" selected?={ orderStatus == "" || orderStatus == "all" }>Tutti</option>
+						<option value="" selected?={ orderStatus == "" }>Attivi</option>
+						<option value="all" selected?={ orderStatus == "all" }>Tutti</option>
 						<option value="pending" selected?={ orderStatus == "pending" }>In attesa</option>
 						<option value="prepared" selected?={ orderStatus == "prepared" }>Preparato</option>
 						<option value="fulfilled" selected?={ orderStatus == "fulfilled" }>Evaso</option>
@@ -75,6 +112,12 @@ templ OrderDashboardPage(entries []order.DashboardEntry, now time.Time, rxStatus
 				<button type="submit" class="small">Filtra</button>
 			</div>
 		</form>
+		if len(entries) > 0 {
+			<div class="hstack gap-2 mb-4">
+				<a href={ templ.SafeURL(printURL(rxStatus, orderStatus, dateFrom, dateTo)) } target="_blank" class="small outline">Stampa ordini</a>
+				<a href={ templ.SafeURL(labelsURL(rxStatus, orderStatus, dateFrom, dateTo)) } target="_blank" class="small outline">Stampa etichette</a>
+			</div>
+		}
 		if len(entries) == 0 {
 			<p class="text-lighter">Nessun ordine attivo. Aggiungi pazienti e prescrizioni per iniziare.</p>
 		} else {
@@ -108,11 +151,14 @@ templ OrderDashboardPage(entries []order.DashboardEntry, now time.Time, rxStatus
 							</td>
 							<td>@orderStatusBadge(entry.OrderStatus)</td>
 							<td>
-								if order.NextStatus(entry.OrderStatus) != "" {
-									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/orders/%d/advance", entry.OrderID)) } style="margin: 0;">
-										<button type="submit" class="small">{ advanceButtonText(entry.OrderStatus) }</button>
-									</form>
-								}
+								<div class="hstack gap-2">
+									if order.NextStatus(entry.OrderStatus) != "" {
+										<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/orders/%d/advance", entry.OrderID)) } style="margin: 0;">
+											<button type="submit" class="small">{ advanceButtonText(entry.OrderStatus) }</button>
+										</form>
+									}
+									<a href={ templ.SafeURL(fmt.Sprintf("/orders/%d/label", entry.OrderID)) } target="_blank" class="small outline">Etichetta</a>
+								</div>
 							</td>
 						</tr>
 					}

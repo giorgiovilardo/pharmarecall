@@ -11,9 +11,9 @@ import (
 // --- Mocks ---
 
 type mockCreator struct {
-	called  bool
-	params  []mockCreateCall
-	err     error
+	called bool
+	params []mockCreateCall
+	err    error
 }
 
 type mockCreateCall struct {

@@ -57,10 +57,10 @@ func (s *stubNotificationMarkAllReader) MarkAllRead(_ context.Context, pharmacyI
 // --- Notification test server ---
 
 type notifTestDeps struct {
-	sm        *scs.SessionManager
-	lister    handler.NotificationLister
-	markRead  handler.NotificationMarkReader
-	markAll   handler.NotificationMarkAllReader
+	sm       *scs.SessionManager
+	lister   handler.NotificationLister
+	markRead handler.NotificationMarkReader
+	markAll  handler.NotificationMarkAllReader
 }
 
 func notifTestServer(d notifTestDeps) *httptest.Server {

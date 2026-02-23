@@ -81,4 +81,3 @@ func HandleMarkAllNotificationsRead(reader NotificationMarkAllReader) http.Handl
 		http.Redirect(w, r, "/notifications", http.StatusSeeOther)
 	}
 }
-

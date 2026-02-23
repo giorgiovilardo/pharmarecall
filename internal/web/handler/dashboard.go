@@ -111,6 +111,93 @@ func HandleAdvanceOrderStatus(advancer OrderStatusAdvancer) http.HandlerFunc {
 	}
 }
 
+// HandlePrintDashboard renders a print-friendly version of the order dashboard.
+func HandlePrintDashboard(lister DashboardLister) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pharmacyID := web.PharmacyID(r.Context())
+		now := time.Now()
+
+		entries, err := lister.ListDashboard(r.Context(), pharmacyID)
+		if err != nil {
+			slog.Error("listing dashboard for print", "error", err)
+			http.Error(w, "Errore interno.", http.StatusInternalServerError)
+			return
+		}
+
+		filters := DashboardFilters{
+			PrescriptionStatus: r.URL.Query().Get("rx_status"),
+			OrderStatus:        r.URL.Query().Get("order_status"),
+			DateFrom:           r.URL.Query().Get("date_from"),
+			DateTo:             r.URL.Query().Get("date_to"),
+		}
+
+		filtered := applyDashboardFilters(entries, filters, now)
+
+		pharmacyName := web.PharmacyName(r.Context())
+		web.PrintDashboardPage(filtered, now, pharmacyName).Render(r.Context(), w)
+	}
+}
+
+// HandlePrintLabel renders a print-friendly label for a single order.
+func HandlePrintLabel(lister DashboardLister) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		orderID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		pharmacyID := web.PharmacyID(r.Context())
+
+		entries, err := lister.ListDashboard(r.Context(), pharmacyID)
+		if err != nil {
+			slog.Error("listing dashboard for label", "error", err)
+			http.Error(w, "Errore interno.", http.StatusInternalServerError)
+			return
+		}
+
+		var found *order.DashboardEntry
+		for _, e := range entries {
+			if e.OrderID == orderID {
+				found = &e
+				break
+			}
+		}
+		if found == nil {
+			http.NotFound(w, r)
+			return
+		}
+
+		web.PrintLabelsPage([]order.DashboardEntry{*found}).Render(r.Context(), w)
+	}
+}
+
+// HandlePrintBatchLabels renders print-friendly labels for all filtered orders.
+func HandlePrintBatchLabels(lister DashboardLister) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pharmacyID := web.PharmacyID(r.Context())
+		now := time.Now()
+
+		entries, err := lister.ListDashboard(r.Context(), pharmacyID)
+		if err != nil {
+			slog.Error("listing dashboard for batch labels", "error", err)
+			http.Error(w, "Errore interno.", http.StatusInternalServerError)
+			return
+		}
+
+		filters := DashboardFilters{
+			PrescriptionStatus: r.URL.Query().Get("rx_status"),
+			OrderStatus:        r.URL.Query().Get("order_status"),
+			DateFrom:           r.URL.Query().Get("date_from"),
+			DateTo:             r.URL.Query().Get("date_to"),
+		}
+
+		filtered := applyDashboardFilters(entries, filters, now)
+
+		web.PrintLabelsPage(filtered).Render(r.Context(), w)
+	}
+}
+
 func applyDashboardFilters(entries []order.DashboardEntry, filters DashboardFilters, now time.Time) []order.DashboardEntry {
 	var result []order.DashboardEntry
 
@@ -124,7 +211,16 @@ func applyDashboardFilters(entries []order.DashboardEntry, filters DashboardFilt
 			}
 		}
 
-		if filters.OrderStatus != "" && filters.OrderStatus != "all" {
+		switch filters.OrderStatus {
+		case "all":
+			// Show everything, no filtering.
+		case "":
+			// Default: show only active orders (pending + prepared).
+			if e.OrderStatus == order.StatusFulfilled {
+				continue
+			}
+		default:
+			// Explicit single-status filter.
 			if e.OrderStatus != filters.OrderStatus {
 				continue
 			}

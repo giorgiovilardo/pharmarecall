@@ -93,22 +93,22 @@
 
 ## 8. Personnel Notifications
 
-- [ ] 8.1 Migration: create `notifications` table (id, pharmacy_id, prescription_id, transition_type, read, created_at). Indexes: on (pharmacy_id, read), unique on (prescription_id, transition_type).
-- [ ] 8.2 Write sqlc queries for notifications: CreateNotification (with ON CONFLICT DO NOTHING), ListNotificationsByPharmacy (join prescriptions + patients), MarkNotificationRead, MarkAllNotificationsRead, CountUnreadNotifications
-- [ ] 8.3 Implement notification generation: on dashboard load, detect prescriptions entering "approaching" status, create notifications if not already created for that transition
-- [ ] 8.4 Add unread notification count to base layout nav (loaded via middleware or Templ helper on every page)
-- [ ] 8.5 Create notification list page: sorted by date, showing patient name, medication, depletion date, read/unread state
-- [ ] 8.6 Implement mark-as-read handler (single notification and mark-all)
-- [ ] 8.7 Add pharmacy scoping to all notification queries
-- [ ] 8.8 Verify end-to-end: prescription approaches depletion, notification appears in nav badge, view list, mark as read
+- [x] 8.1 Migration: create `notifications` table (id, pharmacy_id, prescription_id, transition_type, read, created_at). Indexes: on (pharmacy_id, read), unique on (prescription_id, transition_type).
+- [x] 8.2 Write sqlc queries for notifications: CreateNotification (with ON CONFLICT DO NOTHING), ListNotificationsByPharmacy (join prescriptions + patients), MarkNotificationRead, MarkAllNotificationsRead, CountUnreadNotifications
+- [x] 8.3 Implement notification generation: on dashboard load, detect prescriptions entering "approaching" status, create notifications if not already created for that transition
+- [x] 8.4 Add unread notification count to base layout nav (loaded via middleware or Templ helper on every page)
+- [x] 8.5 Create notification list page: sorted by date, showing patient name, medication, depletion date, read/unread state
+- [x] 8.6 Implement mark-as-read handler (single notification and mark-all)
+- [x] 8.7 Add pharmacy scoping to all notification queries
+- [x] 8.8 Verify end-to-end: prescription approaches depletion, notification appears in nav badge, view list, mark as read
 
 ## 9. Print Views & Labels
 
-- [ ] 9.1 Create print-friendly order list page (no nav, clean table layout, print-specific CSS)
-- [ ] 9.2 Include in print view: pharmacy name, print date, patient, medication, units/box, depletion date, status, fulfillment method
-- [ ] 9.3 Pass dashboard filters through to print view via query parameters
-- [ ] 9.4 Create order label Templ template: patient name, medication, fulfillment method, address (shipping) or contact info (pickup)
-- [ ] 9.5 Implement single label print from dashboard entry
-- [ ] 9.6 Implement batch label print for all visible orders, laid out for label paper
-- [ ] 9.7 Add `window.print()` trigger on print pages
-- [ ] 9.8 Verify end-to-end: filter dashboard, print order list, print single label, batch print labels
+- [x] 9.1 Create print-friendly order list page (no nav, clean table layout, print-specific CSS)
+- [x] 9.2 Include in print view: pharmacy name, print date, patient, medication, units/box, depletion date, status, fulfillment method
+- [x] 9.3 Pass dashboard filters through to print view via query parameters
+- [x] 9.4 Create order label Templ template: patient name, medication, fulfillment method, address (shipping) or contact info (pickup)
+- [x] 9.5 Implement single label print from dashboard entry
+- [x] 9.6 Implement batch label print for all visible orders, laid out for label paper
+- [x] 9.7 Add `window.print()` trigger on print pages
+- [x] 9.8 Verify end-to-end: filter dashboard, print order list, print single label, batch print labels

@@ -45,8 +45,11 @@ type PrescriptionHandlers struct {
 
 // OrderHandlers groups all order/dashboard handler funcs.
 type OrderHandlers struct {
-	Dashboard     http.HandlerFunc
-	AdvanceStatus http.HandlerFunc
+	Dashboard        http.HandlerFunc
+	AdvanceStatus    http.HandlerFunc
+	PrintDashboard   http.HandlerFunc
+	PrintLabel       http.HandlerFunc
+	PrintBatchLabels http.HandlerFunc
 }
 
 // NotificationHandlers groups all notification handler funcs.
@@ -88,9 +91,12 @@ func NewRouter(h Handlers) *http.ServeMux {
 
 	// Dashboard — pharmacy staff landing page (order dashboard)
 	mux.Handle("GET /dashboard", RequirePharmacyStaff(http.HandlerFunc(h.Order.Dashboard)))
+	mux.Handle("GET /dashboard/print", RequirePharmacyStaff(http.HandlerFunc(h.Order.PrintDashboard)))
+	mux.Handle("GET /dashboard/labels", RequirePharmacyStaff(http.HandlerFunc(h.Order.PrintBatchLabels)))
 
 	// Order routes — RequirePharmacyStaff middleware
 	mux.Handle("POST /orders/{id}/advance", RequirePharmacyStaff(http.HandlerFunc(h.Order.AdvanceStatus)))
+	mux.Handle("GET /orders/{id}/label", RequirePharmacyStaff(http.HandlerFunc(h.Order.PrintLabel)))
 
 	// Notification routes — RequirePharmacyStaff middleware
 	mux.Handle("GET /notifications", RequirePharmacyStaff(http.HandlerFunc(h.Notification.List)))

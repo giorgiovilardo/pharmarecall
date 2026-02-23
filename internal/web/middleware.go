@@ -11,12 +11,12 @@ import (
 type contextKey string
 
 const (
-	ctxKeyUserID               contextKey = "userID"
-	ctxKeyRole                 contextKey = "role"
-	ctxKeyPharmacyID           contextKey = "pharmacyID"
-	ctxKeyUserName             contextKey = "userName"
-	ctxKeyPharmacyName         contextKey = "pharmacyName"
-	ctxKeyUnreadNotifications  contextKey = "unreadNotifications"
+	ctxKeyUserID              contextKey = "userID"
+	ctxKeyRole                contextKey = "role"
+	ctxKeyPharmacyID          contextKey = "pharmacyID"
+	ctxKeyUserName            contextKey = "userName"
+	ctxKeyPharmacyName        contextKey = "pharmacyName"
+	ctxKeyUnreadNotifications contextKey = "unreadNotifications"
 )
 
 // LoadUser reads userID and role from the session and attaches them to
