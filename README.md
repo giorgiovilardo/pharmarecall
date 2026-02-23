@@ -176,6 +176,8 @@ internal/
   auth/                   password hashing (bcrypt), session manager setup
   config/                 koanf TOML config loading
   db/                     sqlc-generated code (do not edit)
+  dbutil/                 shared pgx type conversion helpers (Numeric↔float64, Time→Date)
+  depletion/              pure functions for depletion calculations (shared across domains)
 
   user/                   DOMAIN — authentication, password management
     user.go                 types (User) + sentinel errors

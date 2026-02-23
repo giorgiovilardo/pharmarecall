@@ -36,6 +36,8 @@ internal/
   auth/                      — password hashing (bcrypt) + session manager setup
   config/                    — koanf TOML config
   db/                        — sqlc generated (DO NOT EDIT)
+  dbutil/                    — shared pgx type conversion helpers (Numeric↔float64, Time→Date)
+  depletion/                 — pure functions for depletion calculations (shared across domains)
 
   user/                      — DOMAIN: user/authentication business logic
     user.go                  — domain types (User) + domain errors
