@@ -3,6 +3,7 @@ package prescription_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/giorgiovilardo/pharmarecall/internal/prescription"
@@ -145,7 +146,7 @@ func TestCreateValidation(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected validation error")
 			}
-			if !containsSubstring(err.Error(), tt.errStr) {
+			if !strings.Contains(err.Error(), tt.errStr) {
 				t.Errorf("error = %q, want substring %q", err.Error(), tt.errStr)
 			}
 		})
@@ -317,11 +318,3 @@ func TestGetSuccess(t *testing.T) {
 	}
 }
 
-func containsSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
